@@ -154,7 +154,7 @@ export class Multipart implements Part {
     /**
      * Parse multipart bytes (including headers). The boundary and media type are determined from the headers.
      * @param data Byte representation of the multipart headers and body
-     * @throws {SyntaxError} If the `Content-Type` header is missing or does not include a boundary
+     * @throws {@link !SyntaxError} If the `Content-Type` header is missing or does not include a boundary
      */
     public static parse(data: Uint8Array): Multipart {
         return Multipart.part(Component.parse(data));
@@ -163,7 +163,7 @@ export class Multipart implements Part {
     /**
      * Create Multipart from a {@link Part}. The boundary and media type are determined from the part's headers.
      * @param part The part
-     * @throws {SyntaxError} If the `Content-Type` header is missing or does not include a boundary
+     * @throws {@link !SyntaxError} If the `Content-Type` header is missing or does not include a boundary
      */
     public static part(part: Part): Multipart {
         const type = part.headers.get("content-type");
