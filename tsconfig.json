@@ -12,7 +12,7 @@
     "inlineSourceMap": true,
     "outDir": "./dist",
     "declaration": true,
-    "removeComments": true,
+    "removeComments": false,
     "importHelpers": true,
     "importsNotUsedAsValues": "remove",
     "stripInternal": true,
