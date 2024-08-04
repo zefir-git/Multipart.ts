@@ -184,7 +184,8 @@ export class Multipart implements Part {
         const parts: Component[] = [];
 
         for (const [key, value] of formData.entries()) {
-            if (typeof value === "string") parts.push(new Component({"Content-Disposition": `form-data; name="${key}"`}, new TextEncoder().encode(value))); else {
+            if (typeof value === "string") parts.push(new Component({"Content-Disposition": `form-data; name="${key}"`}, new TextEncoder().encode(value)));
+            else {
                 const part = await Component.file(value);
                 part.headers.set("Content-Disposition", `form-data; name="${key}"; filename="${value.name}"`);
                 parts.push(part);
@@ -214,25 +215,127 @@ export class Multipart implements Part {
     }
 
     /**
+     * Parse header params in the format `key=value;foo = "bar"; baz`
+     */
+    private static parseHeaderParams(input: string): Map<string, string> {
+        const params = new Map();
+        let currentKey = "";
+        let currentValue = "";
+        let insideQuotes = false;
+        let escaping = false;
+        let readingKey = true;
+        let valueHasBegun = false;
+
+        for (const char of input) {
+            if (escaping) {
+                currentValue += char;
+                escaping = false;
+                continue;
+            }
+
+            if (char === "\\") {
+                if (!readingKey) escaping = true;
+                continue;
+            }
+
+            if (char === '"') {
+                if (!readingKey) {
+                    if (valueHasBegun && !insideQuotes) currentValue += char;
+                    else {
+                        insideQuotes = !insideQuotes;
+                        valueHasBegun = true;
+                    }
+                }
+                else currentKey += char;
+                continue;
+            }
+
+            if (char === ";" && !insideQuotes) {
+                currentKey = currentKey.trim();
+                if (currentKey.length > 0) {
+                    if (readingKey)
+                        params.set(currentKey, "");
+                    params.set(currentKey, currentValue);
+                }
+
+                currentKey = "";
+                currentValue = "";
+                readingKey = true;
+                valueHasBegun = false;
+                insideQuotes = false;
+                continue;
+            }
+
+            if (char === "=" && readingKey && !insideQuotes) {
+                readingKey = false;
+                continue;
+            }
+
+            if (char === " " && !readingKey && !insideQuotes && !valueHasBegun)
+                continue;
+
+            if (readingKey) currentKey += char;
+            else {
+                valueHasBegun = true;
+                currentValue += char;
+            }
+        }
+
+        currentKey = currentKey.trim();
+        if (currentKey.length > 0) {
+            if (readingKey)
+                params.set(currentKey, "");
+            params.set(currentKey, currentValue);
+        }
+
+        return params;
+    }
+
+    /**
      * Extract media type and boundary from a `Content-Type` header
      */
     private static parseContentType(contentType: string): { mediaType: string | null, boundary: string | null } {
-        const parts = contentType.split(";");
+        const firstSemicolonIndex = contentType.indexOf(";");
 
-        if (parts.length === 0) return {mediaType: null, boundary: null};
-        const mediaType = parts[0]!.trim();
+        if (firstSemicolonIndex === -1) return {mediaType: contentType, boundary: null};
+        const mediaType = contentType.slice(0, firstSemicolonIndex);
+        const params = Multipart.parseHeaderParams(contentType.slice(firstSemicolonIndex + 1));
+        return {mediaType, boundary: params.get("boundary") ?? null};
+    }
 
-        let boundary = null;
+    /**
+     * Extract name, filename and whether form-data from a `Content-Disposition` header
+     */
+    private static parseContentDisposition(contentDisposition: string): {
+        formData: boolean,
+        name: string | null,
+        filename: string | null,
+    } {
+        const params = Multipart.parseHeaderParams(contentDisposition);
+        return {
+            formData: params.has("form-data"),
+            name: params.get("name") ?? null,
+            filename: params.get("filename") ?? null,
+        };
+    }
 
-        for (const param of parts.slice(1)) {
-            const equalsIndex = param.indexOf("=");
-            if (equalsIndex === -1) continue;
-            const key = param.slice(0, equalsIndex).trim();
-            const value = param.slice(equalsIndex + 1).trim();
-            if (key === "boundary" && value.length > 0) boundary = value;
+    /**
+     * Create FormData from this multipart.
+     * Only parts that have `Content-Disposition` set to `form-data` and a non-empty `name` will be included.
+     */
+    public formData(): FormData {
+        const formData = new FormData();
+        for (const part of this.parts) {
+            if (!part.headers.has("Content-Disposition")) continue;
+            const params = Multipart.parseContentDisposition(part.headers.get("Content-Disposition")!);
+            if (!params.formData || params.name === null) continue;
+            if (params.filename !== null) {
+                const file: File = new File([part.body], params.filename, {type: part.headers.get("Content-Type") ?? void 0});
+                formData.append(params.name, file);
+            }
+            else formData.append(params.name, new TextDecoder().decode(part.body));
         }
-
-        return {mediaType, boundary};
+        return formData;
     }
 
     /**

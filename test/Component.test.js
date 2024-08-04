@@ -67,7 +67,7 @@ describe("Component", () => {
         });
     });
 
-    describe("bytes", () => {
+    describe("#bytes", () => {
         it("should return the bytes of a Component with headers and body", () => {
             const headersInit = {"Content-Type": "text/plain", "Content-Length": "3"};
             const body = new Uint8Array([1, 2, 3]);
