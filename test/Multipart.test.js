@@ -126,7 +126,7 @@ describe("Multipart", function () {
         });
     });
 
-    describe("body", function () {
+    describe("#body", function () {
         it("should correctly return the body of the Multipart", function () {
             const boundary = "test-boundary";
             const component = new Component({ "content-type": "text/plain" }, new TextEncoder().encode("test body"));
@@ -164,7 +164,7 @@ describe("Multipart", function () {
         });
     });
 
-    describe("bytes", function () {
+    describe("#bytes", function () {
         it("should correctly return the bytes of the Multipart", function () {
             const boundary = "test-boundary";
             const component = new Component({ "x-foo": "bar" }, new TextEncoder().encode("test content"));
