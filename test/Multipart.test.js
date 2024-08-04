@@ -126,6 +126,34 @@ describe("Multipart", function () {
         });
     });
 
+    describe("#formData", function () {
+        it ("should correctly return the FormData of the Multipart", async function () {
+            const formData = new FormData();
+            formData.append("foo", "bar");
+            formData.append("bar", "baz");
+            formData.append("file", new Blob(["console.log('hello world');"], {type: "application/javascript"}), "hello.js");
+
+            const multipart = await Multipart.formData(formData);
+            const parsedFormData = multipart.formData();
+
+            expect(parsedFormData).to.be.an.instanceof(FormData);
+            expect(parsedFormData.get("foo")).to.equal("bar");
+            expect(parsedFormData.get("bar")).to.equal("baz");
+            const file = parsedFormData.get("file");
+            expect(file).to.be.an.instanceof(File);
+            expect(file.name).to.equal("hello.js");
+            expect(file.type).to.equal("application/javascript");
+            expect(new TextDecoder().decode(await file.arrayBuffer())).to.equal("console.log('hello world');");
+        });
+
+        it("should handle empty FormData multipart", async function (){
+            const multipart = await Multipart.formData(new FormData());
+            const formData = multipart.formData();
+            expect(formData).to.be.an.instanceof(FormData);
+            expect(Object.keys(Object.fromEntries(formData.entries())).length).to.equal(0);
+        });
+    });
+
     describe("#body", function () {
         it("should correctly return the body of the Multipart", function () {
             const boundary = "test-boundary";
