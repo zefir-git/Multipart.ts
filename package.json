@@ -1,0 +1,26 @@
+{
+    "name": "multipart-ts",
+    "version": "0.0.0",
+    "main": "dist/index.js",
+    "module": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "type": "module",
+    "scripts": {
+        "build": "tsc",
+        "prepare": "npm run build",
+        "pretest": "npm run build",
+        "docs": "typedoc src",
+        "test": "mocha"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "LGPL-3.0-only",
+    "description": "TypeScript library for multipart data parsing and creation",
+    "devDependencies": {
+        "chai": "^5.1.1",
+        "mocha": "^10.7.0",
+        "typedoc": "^0.26.5",
+        "typedoc-plugin-mdn-links": "^3.2.7",
+        "typescript": "^5.5.4"
+    }
+}
