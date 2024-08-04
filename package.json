@@ -13,8 +13,11 @@
         "test": "mocha"
     },
     "keywords": [],
-    "author": "",
+    "author": "Zefir",
     "license": "LGPL-3.0-only",
+    "repository": {
+        "url": "github:zefir-git/Multipart.ts"
+    },
     "description": "TypeScript library for multipart data parsing and creation",
     "devDependencies": {
         "chai": "^5.1.1",
