@@ -4,11 +4,6 @@ on:
   release:
     types: [published]
 
-permissions:
-  contents: write
-  pages: write
-  id-token: write
-
 jobs:
   publish-npm:
     name: Publish to npm
@@ -16,6 +11,7 @@ jobs:
     permissions:
       contents: read
       id-token: write
+      pages: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
