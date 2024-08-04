@@ -184,7 +184,8 @@ export class Multipart implements Part {
         const parts: Component[] = [];
 
         for (const [key, value] of formData.entries()) {
-            if (typeof value === "string") parts.push(new Component({"Content-Disposition": `form-data; name="${key}"`}, new TextEncoder().encode(value))); else {
+            if (typeof value === "string") parts.push(new Component({"Content-Disposition": `form-data; name="${key}"`}, new TextEncoder().encode(value)));
+            else {
                 const part = await Component.file(value);
                 part.headers.set("Content-Disposition", `form-data; name="${key}"; filename="${value.name}"`);
                 parts.push(part);
