@@ -23,10 +23,10 @@ export class Component implements Part {
      */
     public static parse(data: Uint8Array): Component {
         const hasHeaders = Multipart.findSequenceIndex(data, Multipart.CRLF) !== 0;
-        const headersEndIndex = Multipart.findSequenceIndex(data, Multipart.combineArrays([Multipart.CRLF, Multipart.CRLF]));
+        const headersEndIndex = hasHeaders ? Multipart.findSequenceIndex(data, Multipart.combineArrays([Multipart.CRLF, Multipart.CRLF])) + 2 : 0;
 
         const headersBuffer = data.slice(0, headersEndIndex);
-        const body = data.slice(headersEndIndex + 4);
+        const body = data.slice(headersEndIndex + 2);
 
         const headersString = new TextDecoder().decode(headersBuffer);
         const headers = new Headers();
