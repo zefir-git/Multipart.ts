@@ -45,8 +45,8 @@ describe("Component", () => {
             expect(component.body).to.deep.equal(body);
         });
 
-        it("should handle missing headers and body", () => {
-            const data = new Uint8Array([0x0D, 0x0A, 0x0D, 0x0A]);
+        it("should handle missing headers and empty body", () => {
+            const data = new Uint8Array([0x0D, 0x0A]);
 
             const component = Component.parse(data);
 
