@@ -41,6 +41,12 @@ describe("Multipart", function () {
 
             expect(parsedMultipart).to.be.an.instanceof(Multipart);
             expect(parsedMultipart.parts.length).to.equal(2);
+            const part1 = parsedMultipart.parts[0];
+            expect(part1.headers.get("x-foo")).to.equal("bar");
+            expect(part1.body).to.deep.equal(component1.body);
+            const part2 = parsedMultipart.parts[1];
+            expect(part2.headers.get("content-type")).to.equal("text/plain");
+            expect(part2.body).to.deep.equal(component2.body);
         });
 
         it("should handle nested multiparts", function () {
