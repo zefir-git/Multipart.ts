@@ -65,6 +65,17 @@ describe("Component", () => {
 
             expect(component.body).to.deep.equal(new Uint8Array(0));
         });
+
+        it("should handle body with no headers", () => {
+            const body = "\r\nGoal: No headers!\r\n\r\nReally none.\r\n";
+            const data = new TextEncoder().encode(body);
+
+            const component = Component.parse(data);
+
+            expect(component.headers).to.be.empty;
+
+            expect(new TextDecoder().decode(component.body)).to.equal("Goal: No headers!\r\n\r\nReally none.\r\n");
+        });
     });
 
     describe("#bytes", () => {
