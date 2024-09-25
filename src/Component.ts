@@ -22,6 +22,7 @@ export class Component implements Part {
      * @param data Component byte representation to parse
      */
     public static parse(data: Uint8Array): Component {
+        const hasHeaders = Multipart.findSequenceIndex(data, Multipart.CRLF) !== 0;
         const headersEndIndex = Multipart.findSequenceIndex(data, Multipart.combineArrays([Multipart.CRLF, Multipart.CRLF]));
 
         const headersBuffer = data.slice(0, headersEndIndex);
