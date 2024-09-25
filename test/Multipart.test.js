@@ -41,6 +41,51 @@ describe("Multipart", function () {
 
             expect(parsedMultipart).to.be.an.instanceof(Multipart);
             expect(parsedMultipart.parts.length).to.equal(2);
+            const part1 = parsedMultipart.parts[0];
+            expect(part1.headers.get("x-foo")).to.equal("bar");
+            expect(part1.body).to.deep.equal(component1.body);
+            const part2 = parsedMultipart.parts[1];
+            expect(part2.headers.get("content-type")).to.equal("text/plain");
+            expect(part2.body).to.deep.equal(component2.body);
+        });
+
+        it("should parse Multipart data from RFC 2046 5.1.1 example body", function () {
+            const string =
+                'From: Nathaniel Borenstein <nsb@bellcore.com>\r\n' +
+                'To: Ned Freed <ned@innosoft.com>\r\n' +
+                'Date: Sun, 21 Mar 1993 23:56:48 -0800 (PST)\r\n' +
+                'Subject: Sample message\r\n' +
+                'MIME-Version: 1.0\r\n' +
+                'Content-type: multipart/mixed; boundary="simple boundary"\r\n' +
+                '\r\n' +
+                'This is the preamble.  It is to be ignored, though it\n' +
+                'is a handy place for composition agents to include an\r\n' +
+                'explanatory note to non-MIME conformant readers.\n' +
+                '\r\n' +
+                '--simple boundary\r\n' +
+                '\r\n' +
+                'This is implicitly typed plain US-ASCII text.\r\n' +
+                'It does NOT end with a linebreak.\r\n' +
+                '--simple boundary\r\n' +
+                'Content-type: text/plain; charset=us-ascii\r\n' +
+                '\r\n' +
+                'This is explicitly typed plain US-ASCII text.\r\n' +
+                'It DOES end with a linebreak.\r\n' +
+                '\r\n' +
+                '--simple boundary--\r\n' +
+                '\r\n' +
+                'This is the epilogue.  It is also to be ignored.';
+
+            const bytes = new TextEncoder().encode(string);
+            const parsedMultipart = Multipart.parse(bytes);
+
+            expect(parsedMultipart).to.be.an.instanceof(Multipart);
+            expect(parsedMultipart.parts.length).to.equal(2);
+            const part1 = parsedMultipart.parts[0];
+            expect(new TextDecoder().decode(part1.body)).to.equal("This is implicitly typed plain US-ASCII text.\r\nIt does NOT end with a linebreak.");
+            const part2 = parsedMultipart.parts[1];
+            expect(part2.headers.get("content-type")).to.equal("text/plain; charset=us-ascii");
+            expect(new TextDecoder().decode(part2.body)).to.equal("This is explicitly typed plain US-ASCII text.\r\nIt DOES end with a linebreak.\r\n");
         });
 
         it("should handle nested multiparts", function () {

@@ -1,5 +1,5 @@
 import {expect} from "chai";
-import {Component} from "../dist/index.js";
+import {Multipart, Component} from "../dist/index.js";
 
 describe("Component", () => {
 
@@ -35,7 +35,7 @@ describe("Component", () => {
         it("should parse headers and body correctly from Uint8Array", () => {
             const headers = "Content-Type: text/plain\r\nContent-Length: 5\r\n\r\n";
             const body = new Uint8Array([1, 2, 3, 4, 5]);
-            const data = new Uint8Array([...headers.split("").map(c => c.charCodeAt(0)), ...body]);
+            const data = Multipart.combineArrays([new TextEncoder().encode(headers), body]);
 
             const component = Component.parse(data);
 
@@ -45,8 +45,8 @@ describe("Component", () => {
             expect(component.body).to.deep.equal(body);
         });
 
-        it("should handle missing headers and body", () => {
-            const data = new Uint8Array([0x0D, 0x0A, 0x0D, 0x0A]);
+        it("should handle missing headers and empty body", () => {
+            const data = new Uint8Array([0x0D, 0x0A]);
 
             const component = Component.parse(data);
 
@@ -57,13 +57,24 @@ describe("Component", () => {
 
         it("should handle headers with no body", () => {
             const headers = "Content-Type: text/plain\r\n\r\n";
-            const data = new Uint8Array([...headers.split("").map(c => c.charCodeAt(0))]);
+            const data = new TextEncoder().encode(headers);
 
             const component = Component.parse(data);
 
             expect(component.headers.get("Content-Type")).to.equal("text/plain");
 
             expect(component.body).to.deep.equal(new Uint8Array(0));
+        });
+
+        it("should handle body with no headers", () => {
+            const body = "\r\nGoal: No headers!\r\n\r\nReally none.\r\n";
+            const data = new TextEncoder().encode(body);
+
+            const component = Component.parse(data);
+
+            expect(component.headers).to.be.empty;
+
+            expect(new TextDecoder().decode(component.body)).to.equal("Goal: No headers!\r\n\r\nReally none.\r\n");
         });
     });
 
