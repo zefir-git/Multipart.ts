@@ -120,6 +120,8 @@ export class Multipart implements Part {
 
     public set boundary(boundary: Uint8Array | string) {
         this.#boundary = typeof boundary === "string" ? new TextEncoder().encode(boundary) : boundary;
+        if (!Multipart.isValidBoundary(this.#boundary))
+            throw new RangeError("Boundary must be 1 to 70 characters long, not end with space, and may only contain: A-Z a-z 0-9 '()+_,-./:=? and space");
         this.setHeaders();
     }
 
