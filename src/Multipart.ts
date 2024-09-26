@@ -60,7 +60,8 @@ export class Multipart implements Part {
      * @param [boundary] The multipart boundary used to separate the parts. Randomly generated if not provided
      * @param [mediaType] The media type of the multipart. Defaults to "multipart/mixed"
      *
-     * @throws {RangeError} If the boundary is invalid. A valid boundary is 1 to 70 characters long, does not end with space, and may only contain: A-Z a-z 0-9 '()+_,-./:=? and space
+     * @throws {RangeError} If the boundary is invalid. A valid boundary is 1 to 70 characters long,
+     * does not end with space, and may only contain: A-Z a-z 0-9 '()+_,-./:=? and space
      */
     public constructor(public readonly parts: Part[], boundary: Uint8Array | string = crypto.randomUUID(), mediaType: string = "multipart/mixed") {
         this.#boundary = typeof boundary === "string" ? new TextEncoder().encode(boundary) : boundary;
