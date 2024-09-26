@@ -113,12 +113,17 @@ export class Multipart implements Part {
     }
 
     /**
-     * The boundary bytes used to separate the parts
+     * Get the boundary bytes used to separate the parts
      */
     public get boundary(): Uint8Array {
         return this.#boundary;
     }
 
+    /**
+     * Set the boundary bytes used to separate the parts
+     * @throws {RangeError} If the boundary is invalid. A valid boundary is 1 to 70 characters long,
+     * does not end with space, and may only contain: A-Z a-z 0-9 '()+_,-./:=? and space
+     */
     public set boundary(boundary: Uint8Array | string) {
         this.#boundary = typeof boundary === "string" ? new TextEncoder().encode(boundary) : boundary;
         if (!Multipart.isValidBoundary(this.#boundary))
