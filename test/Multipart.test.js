@@ -27,6 +27,30 @@ describe("Multipart", function () {
             expect(new TextDecoder().decode(multipart.boundary)).to.equal("empty-boundary");
             expect(multipart.mediaType).to.equal("multipart/mixed");
         });
+
+        it("should accept only valid boundaries", function () {
+            expect(() => new Multipart([], "")).to.throw(RangeError, "Invalid boundary");
+            expect(() => new Multipart([], " ")).to.throw(RangeError, "Invalid boundary");
+            expect(() => new Multipart([], "a ")).to.throw(RangeError, "Invalid boundary");
+            expect(() => new Multipart([], "0123456789".repeat(7) + "0")).to.throw(RangeError, "Invalid boundary");
+            expect(() => new Multipart([], "foo!bar")).to.throw(RangeError, "Invalid boundary");
+
+            expect(() => new Multipart([], "a")).to.not.throw();
+            expect(() => new Multipart([], "0123456789".repeat(7))).to.not.throw();
+            expect(() => new Multipart([], "foo bar")).to.not.throw();
+            expect(() => new Multipart([], "foo'bar")).to.not.throw();
+            expect(() => new Multipart([], "foo(bar")).to.not.throw();
+            expect(() => new Multipart([], "foo)bar")).to.not.throw();
+            expect(() => new Multipart([], "foo+bar")).to.not.throw();
+            expect(() => new Multipart([], "foo_bar")).to.not.throw();
+            expect(() => new Multipart([], "foo,bar")).to.not.throw();
+            expect(() => new Multipart([], "foo-bar")).to.not.throw();
+            expect(() => new Multipart([], "foo.bar")).to.not.throw();
+            expect(() => new Multipart([], "foo/bar")).to.not.throw();
+            expect(() => new Multipart([], "foo:bar")).to.not.throw();
+            expect(() => new Multipart([], "foo=bar")).to.not.throw();
+            expect(() => new Multipart([], "foo?bar")).to.not.throw();
+        });
     });
 
     describe("parse", function () {
