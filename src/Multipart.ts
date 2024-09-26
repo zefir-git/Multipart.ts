@@ -59,11 +59,56 @@ export class Multipart implements Part {
      * @param parts The parts to include in the multipart
      * @param [boundary] The multipart boundary used to separate the parts. Randomly generated if not provided
      * @param [mediaType] The media type of the multipart. Defaults to "multipart/mixed"
+     *
+     * @throws {RangeError} If the boundary is invalid. A valid boundary is 1 to 70 characters long, does not end with space, and may only contain: A-Z a-z 0-9 '()+_,-./:=? and space
      */
     public constructor(public readonly parts: Part[], boundary: Uint8Array | string = crypto.randomUUID(), mediaType: string = "multipart/mixed") {
         this.#boundary = typeof boundary === "string" ? new TextEncoder().encode(boundary) : boundary;
+        if (!Multipart.isValidBoundary(this.#boundary))
+            throw new RangeError("Boundary must be 1 to 70 characters long, not end with space, and may only contain: A-Z a-z 0-9 '()+_,-./:=? and space");
         this.#mediaType = mediaType;
         this.setHeaders();
+    }
+
+    /**
+     * Check if the boundary is valid
+     * A valid boundary is 1 to 70 characters long, does not end with space, and may only contain:
+     * A-Z a-z 0-9 '()+_,-./:=? and space
+     *
+     * ```bnf
+     * boundary := 0*69<bchars> bcharsnospace
+     *
+     * bchars := bcharsnospace / " "
+     *
+     * bcharsnospace := DIGIT / ALPHA / "'" / "(" / ")" /
+     *                  "+" / "_" / "," / "-" / "." /
+     *                  "/" / ":" / "=" / "?"
+     * ```
+     *
+     * From: RFC 2046, Section 5.1.1. Common Syntax
+     *
+     * @internal
+     */
+    private static isValidBoundary(boundary: Uint8Array): boolean {
+        if (boundary.length < 1 || boundary.length > 70 || boundary[boundary.length - 1] === Multipart.SP)
+            return false;
+
+        for (const char of boundary) {
+            if (char >= 0x30 && char <= 0x39) continue;
+            if ((char >= 0x41 && char <= 0x5a) || (char >= 0x61 && char <= 0x7a)) continue;
+            if (
+                char === Multipart.SP ||
+                (char >= 0x27 && char <= 0x29) ||
+                (char >= 0x2b && char <= 0x2f) ||
+                char === 0x3a ||
+                char === 0x3d ||
+                char === 0x3f ||
+                char === 0x5f
+            ) continue;
+            return false;
+        }
+
+        return true;
     }
 
     /**
