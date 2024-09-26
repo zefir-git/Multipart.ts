@@ -59,14 +59,9 @@ export class Multipart implements Part {
      * @param parts The parts to include in the multipart
      * @param [boundary] The multipart boundary used to separate the parts. Randomly generated if not provided
      * @param [mediaType] The media type of the multipart. Defaults to "multipart/mixed"
-     *
-     * @throws {RangeError} If the boundary is invalid. A valid boundary is 1 to 70 characters long,
-     * does not end with space, and may only contain: A-Z a-z 0-9 '()+_,-./:=? and space
      */
     public constructor(public readonly parts: Part[], boundary: Uint8Array | string = crypto.randomUUID(), mediaType: string = "multipart/mixed") {
         this.#boundary = typeof boundary === "string" ? new TextEncoder().encode(boundary) : boundary;
-        if (!Multipart.isValidBoundary(this.#boundary))
-            throw new RangeError("Invalid boundary: must be 1 to 70 characters long, not end with space, and may only contain: A-Z a-z 0-9 '()+_,-./:=? and space");
         this.#mediaType = mediaType;
         this.setHeaders();
     }
@@ -121,13 +116,9 @@ export class Multipart implements Part {
 
     /**
      * Set the boundary bytes used to separate the parts
-     * @throws {RangeError} If the boundary is invalid. A valid boundary is 1 to 70 characters long,
-     * does not end with space, and may only contain: A-Z a-z 0-9 '()+_,-./:=? and space
      */
     public set boundary(boundary: Uint8Array | string) {
         this.#boundary = typeof boundary === "string" ? new TextEncoder().encode(boundary) : boundary;
-        if (!Multipart.isValidBoundary(this.#boundary))
-            throw new RangeError("Invalid boundary: must be 1 to 70 characters long, not end with space, and may only contain: A-Z a-z 0-9 '()+_,-./:=? and space");
         this.setHeaders();
     }
 
@@ -149,8 +140,14 @@ export class Multipart implements Part {
     /**
      * Get the bytes of the body of this multipart. Includes all parts separated by the boundary.
      * Does not include the headers.
+     *
+     * @throws {RangeError} If the multipart boundary is invalid. A valid boundary is 1 to 70 characters long,
+     * does not end with space, and may only contain: A-Z a-z 0-9 '()+_,-./:=? and space
      */
     public get body(): Uint8Array {
+        if (!Multipart.isValidBoundary(this.#boundary))
+            throw new RangeError("Invalid boundary: must be 1 to 70 characters long, not end with space, and may only contain: A-Z a-z 0-9 '()+_,-./:=? and space");
+
         const result: ArrayLike<number>[] = [];
         for (const part of this.parts) result.push(Multipart.DOUBLE_DASH, this.boundary, Multipart.CRLF, part.bytes(), Multipart.CRLF);
         result.push(Multipart.DOUBLE_DASH, this.boundary, Multipart.DOUBLE_DASH, Multipart.CRLF);
@@ -180,6 +177,9 @@ export class Multipart implements Part {
      * @param [mediaType] Multipart media type to pass to the constructor
      */
     public static parseBody(data: Uint8Array, boundary: Uint8Array, mediaType?: string): Multipart {
+        if (!Multipart.isValidBoundary(boundary))
+            console.warn("Invalid boundary:", new TextDecoder().decode(boundary), "\nMust be 1 to 70 characters long, not end with space, and may only contain: A-Z a-z 0-9 '()+_,-./:=? and space");
+
         const parts: Uint8Array[] = [];
         const fullBoundarySequence = new Uint8Array(Multipart.combineArrays([Multipart.DOUBLE_DASH, boundary, Multipart.CRLF]));
         const endBoundarySequence = new Uint8Array(Multipart.combineArrays([Multipart.DOUBLE_DASH, boundary, Multipart.DOUBLE_DASH, Multipart.CRLF]));
@@ -393,6 +393,9 @@ export class Multipart implements Part {
 
     /**
      * Get the bytes of the headers and {@link body} of this multipart.
+     *
+     * @throws {RangeError} If the multipart boundary is invalid. A valid boundary is 1 to 70 characters long,
+     * does not end with space, and may only contain: A-Z a-z 0-9 '()+_,-./:=? and space
      */
     public bytes(): Uint8Array {
         const result: ArrayLike<number>[] = [];
