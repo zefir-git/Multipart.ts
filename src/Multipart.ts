@@ -181,22 +181,34 @@ export class Multipart implements Part {
             console.warn("Invalid boundary:", new TextDecoder().decode(boundary), "\nMust be 1 to 70 characters long, not end with space, and may only contain: A-Z a-z 0-9 '()+_,-./:=? and space");
 
         const parts: Uint8Array[] = [];
-        const fullBoundarySequence = new Uint8Array(Multipart.combineArrays([Multipart.DOUBLE_DASH, boundary, Multipart.CRLF]));
-        const endBoundarySequence = new Uint8Array(Multipart.combineArrays([Multipart.DOUBLE_DASH, boundary, Multipart.DOUBLE_DASH, Multipart.CRLF]));
+        const fullBoundarySequence = Multipart.combineArrays([Multipart.CRLF, Multipart.DOUBLE_DASH, boundary]);
+        const endBoundarySequence = Multipart.combineArrays([Multipart.CRLF, Multipart.DOUBLE_DASH, boundary, Multipart.DOUBLE_DASH]);
+
+        // add artificial CRLF at the start of the data
+        const paddedData = Multipart.combineArrays([Multipart.CRLF, data]);
 
         let start = 0;
         while (true) {
-            const boundaryIndex = Multipart.findSequenceIndex(data, fullBoundarySequence, start);
+            const boundaryIndex = Multipart.findSequenceIndex(paddedData, fullBoundarySequence, start);
             if (boundaryIndex === -1) break;
 
-            const partStart = boundaryIndex + fullBoundarySequence.length;
-            const nextBoundaryIndex = Multipart.findSequenceIndex(data, fullBoundarySequence, partStart);
-            const endBoundaryIndex = Multipart.findSequenceIndex(data, endBoundarySequence, partStart);
+            let partStart = boundaryIndex + fullBoundarySequence.length;
+            // ignore linear whitespace after boundary
+            while (true) {
+                const byte = paddedData[partStart];
+                if (byte !== Multipart.SP && byte !== 0x09) break;
+                ++partStart;
+            }
+            // account for CRLF after boundary
+            partStart += 2;
 
-            // -2 to ignore the mandatory CRLF at the end of the body
-            const partEnd = nextBoundaryIndex === -1 ? (endBoundaryIndex === -1 ? data.length : endBoundaryIndex - 2) : nextBoundaryIndex - 2;
+            const endBoundaryIndex = Multipart.findSequenceIndex(paddedData, endBoundarySequence, partStart);
+            if (endBoundaryIndex === -1) break;
+            const nextBoundaryIndex = Multipart.findSequenceIndex(paddedData, fullBoundarySequence, partStart);
 
-            if (partStart < partEnd) parts.push(data.slice(partStart, partEnd));
+            const partEnd = nextBoundaryIndex === -1 ? (endBoundaryIndex === -1 ? paddedData.length : endBoundaryIndex) : nextBoundaryIndex;
+
+            if (partStart < partEnd) parts.push(paddedData.slice(partStart, partEnd));
             start = partEnd;
         }
 
