@@ -143,7 +143,7 @@ describe("Multipart", function () {
                 'X-Foo: Foo\r\n' +
                 '\r\n' +
                 'The boundary delimiter of this part has trailing SP and tab.\r\n' +
-                '--simple boundary--\r\r\n'
+                '--simple boundary--\t \t\r\n'
 
             const parsedMultipart = Multipart.parseBody(new TextEncoder().encode(string), new TextEncoder().encode("simple boundary"));
 
