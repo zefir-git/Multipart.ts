@@ -67,12 +67,56 @@ export class Multipart implements Part {
     }
 
     /**
-     * The boundary bytes used to separate the parts
+     * Check if the boundary is valid
+     * A valid boundary is 1 to 70 characters long, does not end with space, and may only contain:
+     * A-Z a-z 0-9 '()+_,-./:=? and space
+     *
+     * ```bnf
+     * boundary := 0*69<bchars> bcharsnospace
+     *
+     * bchars := bcharsnospace / " "
+     *
+     * bcharsnospace := DIGIT / ALPHA / "'" / "(" / ")" /
+     *                  "+" / "_" / "," / "-" / "." /
+     *                  "/" / ":" / "=" / "?"
+     * ```
+     *
+     * From: RFC 2046, Section 5.1.1. Common Syntax
+     *
+     * @internal
+     */
+    private static isValidBoundary(boundary: Uint8Array): boolean {
+        if (boundary.length < 1 || boundary.length > 70 || boundary[boundary.length - 1] === Multipart.SP)
+            return false;
+
+        for (const char of boundary) {
+            if (char >= 0x30 && char <= 0x39) continue;
+            if ((char >= 0x41 && char <= 0x5a) || (char >= 0x61 && char <= 0x7a)) continue;
+            if (
+                char === Multipart.SP ||
+                (char >= 0x27 && char <= 0x29) ||
+                (char >= 0x2b && char <= 0x2f) ||
+                char === 0x3a ||
+                char === 0x3d ||
+                char === 0x3f ||
+                char === 0x5f
+            ) continue;
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Get the boundary bytes used to separate the parts
      */
     public get boundary(): Uint8Array {
         return this.#boundary;
     }
 
+    /**
+     * Set the boundary bytes used to separate the parts
+     */
     public set boundary(boundary: Uint8Array | string) {
         this.#boundary = typeof boundary === "string" ? new TextEncoder().encode(boundary) : boundary;
         this.setHeaders();
@@ -96,8 +140,14 @@ export class Multipart implements Part {
     /**
      * Get the bytes of the body of this multipart. Includes all parts separated by the boundary.
      * Does not include the headers.
+     *
+     * @throws {RangeError} If the multipart boundary is invalid. A valid boundary is 1 to 70 characters long,
+     * does not end with space, and may only contain: A-Z a-z 0-9 '()+_,-./:=? and space
      */
     public get body(): Uint8Array {
+        if (!Multipart.isValidBoundary(this.#boundary))
+            throw new RangeError("Invalid boundary: must be 1 to 70 characters long, not end with space, and may only contain: A-Z a-z 0-9 '()+_,-./:=? and space");
+
         const result: ArrayLike<number>[] = [];
         for (const part of this.parts) result.push(Multipart.DOUBLE_DASH, this.boundary, Multipart.CRLF, part.bytes(), Multipart.CRLF);
         result.push(Multipart.DOUBLE_DASH, this.boundary, Multipart.DOUBLE_DASH, Multipart.CRLF);
@@ -127,6 +177,9 @@ export class Multipart implements Part {
      * @param [mediaType] Multipart media type to pass to the constructor
      */
     public static parseBody(data: Uint8Array, boundary: Uint8Array, mediaType?: string): Multipart {
+        if (!Multipart.isValidBoundary(boundary))
+            console.warn("Invalid boundary:", new TextDecoder().decode(boundary), "\nMust be 1 to 70 characters long, not end with space, and may only contain: A-Z a-z 0-9 '()+_,-./:=? and space");
+
         const parts: Uint8Array[] = [];
         const fullBoundarySequence = new Uint8Array(Multipart.combineArrays([Multipart.DOUBLE_DASH, boundary, Multipart.CRLF]));
         const endBoundarySequence = new Uint8Array(Multipart.combineArrays([Multipart.DOUBLE_DASH, boundary, Multipart.DOUBLE_DASH, Multipart.CRLF]));
@@ -340,6 +393,9 @@ export class Multipart implements Part {
 
     /**
      * Get the bytes of the headers and {@link body} of this multipart.
+     *
+     * @throws {RangeError} If the multipart boundary is invalid. A valid boundary is 1 to 70 characters long,
+     * does not end with space, and may only contain: A-Z a-z 0-9 '()+_,-./:=? and space
      */
     public bytes(): Uint8Array {
         const result: ArrayLike<number>[] = [];
