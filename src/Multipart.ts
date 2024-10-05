@@ -280,6 +280,36 @@ export class Multipart implements Part {
     }
 
     /**
+     * Find boundary delimiter start and end index
+     * @param data Multipart body bytes
+     * @param boundary The multipart boundary bytes
+     * @param [start] The index to start the search at (i.e. the number of bytes to skip/ignore at the beginning of the byte array). Defaults to 0.
+     * @internal
+     */
+    private static findBoundaryBounds(data: Uint8Array, boundary: Uint8Array, start = 0): [number, number] | null {
+        if (start >= data.length) return null;
+        const boundaryStartIndex = Multipart.findSequenceIndex(data, Multipart.combineArrays([Multipart.CRLF, Multipart.DOUBLE_DASH, boundary]), start);
+        if (boundaryStartIndex === -1) return null;
+        // ignore any linear whitespace
+        let currentEndOfBoundaryIndex = boundaryStartIndex + boundary.length + 4;
+        while (currentEndOfBoundaryIndex < data.length) {
+            const byte = data[currentEndOfBoundaryIndex];
+            if (byte === Multipart.CR) break;
+            if (byte === Multipart.LF) return null;
+            if (byte === Multipart.SP || byte === 0x09) {
+                currentEndOfBoundaryIndex++;
+                continue;
+            }
+            // encountered non-linear whitespace after boundary and before any CR or LF
+            // meaning the boundary could not be terminated, therefore continue search for boundary
+            return Multipart.findBoundaryBounds(data, boundary, boundaryStartIndex + 2);
+        }
+        if (data[currentEndOfBoundaryIndex + 1] !== Multipart.LF) return null;
+
+        return [boundaryStartIndex, currentEndOfBoundaryIndex + 2];
+    }
+
+    /**
      * Parse header params in the format `key=value;foo = "bar"; baz`
      */
     private static parseHeaderParams(input: string): Map<string, string> {
