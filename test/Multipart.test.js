@@ -129,6 +129,29 @@ describe("Multipart", function () {
             expect(parsedMultipart.parts).to.be.empty;
         });
 
+        it("should parse Multipart from empty Component bytes", function () {
+            const multipart = new Multipart([new Component({})]);
+            const multipartBytes = multipart.bytes();
+            const parsedMultipart = Multipart.parse(multipartBytes);
+            expect(parsedMultipart).to.be.an.instanceof(Multipart);
+            expect(parsedMultipart.parts.length).to.equal(1);
+            expect(new TextDecoder().decode(parsedMultipart.parts[0].bytes())).to.equal("\r\n");
+        });
+
+        it("should handle parsing of empty parts in multipart MIME string", function () {
+            const string = "Content-type: multipart/mixed; boundary=\"simple boundary\"\r\n\r\n"
+                + "--simple boundary\r\n"
+                + "\r\n"
+                + "\r\n"
+                + "--simple boundary--\r\n";
+            const multipart = Multipart.parse(new TextEncoder().encode(string));
+            const multipartBytes = multipart.bytes();
+            const parsedMultipart = Multipart.parse(multipartBytes);
+            expect(parsedMultipart).to.be.an.instanceof(Multipart);
+            expect(parsedMultipart.parts.length).to.equal(1);
+            expect(new TextDecoder().decode(parsedMultipart.parts[0].bytes())).to.equal("\r\n");
+        });
+
         it("should ignore linear whitespace after boundary delimiter", function () {
             const string =
                 '--simple boundary    \r\n' +
