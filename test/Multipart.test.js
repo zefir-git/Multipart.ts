@@ -159,6 +159,33 @@ describe("Multipart", function () {
             expect(part3.headers.get("x-foo")).to.equal("Foo");
             expect(new TextDecoder().decode(part3.body)).to.equal("The boundary delimiter of this part has trailing SP and tab.");
         });
+
+        it("should handle strings that look like part boundary", function () {
+            const string =
+                '--simple boundary\r\n' +
+                'X-Foo: Bar\r\n' +
+                '\r\n' +
+                'Can this handle\r\n' +
+                '--simple boundary this is fake\r\n' +
+                '\r\n' +
+                'not new part\r\n' +
+                '--simple boundary\r\n' +
+                'X-Foo: Baz\r\n' +
+                '\r\n' +
+                'Final part\r\n' +
+                '--simple boundary--\r\n'
+
+            const parsedMultipart = Multipart.parseBody(new TextEncoder().encode(string), new TextEncoder().encode("simple boundary"));
+
+            expect(parsedMultipart).to.be.an.instanceof(Multipart);
+            expect(parsedMultipart.parts.length).to.equal(2);
+            const part1 = parsedMultipart.parts[0];
+            expect(part1.headers.get("x-foo")).to.equal("Bar");
+            expect(new TextDecoder().decode(part1.body)).to.equal("Can this handle\r\n--simple boundary this is fake\r\n\r\nnot new part");
+            const part2 = parsedMultipart.parts[1];
+            expect(part2.headers.get("x-foo")).to.equal("Baz");
+            expect(new TextDecoder().decode(part2.body)).to.equal("Final part");
+        });
     });
 
     describe("formData", function () {
