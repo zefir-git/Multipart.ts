@@ -364,4 +364,28 @@ describe("Multipart", function () {
             expect(() => new Multipart([], "foo?bar").bytes()).to.not.throw();
         });
     });
+
+    describe("#headers", function () {
+        it("should have the Content-Type boundary parameters in quotes as per RFC 2616", function () {
+            expect(new Multipart([], "foobar", "multipart/mixed").headers.get("content-type")).to.equal("multipart/mixed; boundary=foobar");
+            expect(new Multipart([], "foo\tbar", "multipart/mixed").headers.get("content-type")).to.equal('multipart/mixed; boundary="foo\tbar"');
+            expect(new Multipart([], "foo bar", "multipart/mixed").headers.get("content-type")).to.equal('multipart/mixed; boundary="foo bar"');
+            expect(new Multipart([], 'foo"bar', "multipart/mixed").headers.get("content-type")).to.equal('multipart/mixed; boundary="foo\\"bar"');
+            expect(new Multipart([], "foo(bar", "multipart/mixed").headers.get("content-type")).to.equal('multipart/mixed; boundary="foo(bar"');
+            expect(new Multipart([], "foo)bar", "multipart/mixed").headers.get("content-type")).to.equal('multipart/mixed; boundary="foo)bar"');
+            expect(new Multipart([], "foo,bar", "multipart/mixed").headers.get("content-type")).to.equal('multipart/mixed; boundary="foo,bar"');
+            expect(new Multipart([], "foo:bar", "multipart/mixed").headers.get("content-type")).to.equal('multipart/mixed; boundary="foo:bar"');
+            expect(new Multipart([], "foo;bar", "multipart/mixed").headers.get("content-type")).to.equal('multipart/mixed; boundary="foo;bar"');
+            expect(new Multipart([], "foo<bar", "multipart/mixed").headers.get("content-type")).to.equal('multipart/mixed; boundary="foo<bar"');
+            expect(new Multipart([], "foo=bar", "multipart/mixed").headers.get("content-type")).to.equal('multipart/mixed; boundary="foo=bar"');
+            expect(new Multipart([], "foo>bar", "multipart/mixed").headers.get("content-type")).to.equal('multipart/mixed; boundary="foo>bar"');
+            expect(new Multipart([], "foo?bar", "multipart/mixed").headers.get("content-type")).to.equal('multipart/mixed; boundary="foo?bar"');
+            expect(new Multipart([], "foo@bar", "multipart/mixed").headers.get("content-type")).to.equal('multipart/mixed; boundary="foo@bar"');
+            expect(new Multipart([], "foo[bar", "multipart/mixed").headers.get("content-type")).to.equal('multipart/mixed; boundary="foo[bar"');
+            expect(new Multipart([], "foo\\bar", "multipart/mixed").headers.get("content-type")).to.equal('multipart/mixed; boundary="foo\\bar"');
+            expect(new Multipart([], "foo]bar", "multipart/mixed").headers.get("content-type")).to.equal('multipart/mixed; boundary="foo]bar"');
+            expect(new Multipart([], "foo{bar", "multipart/mixed").headers.get("content-type")).to.equal('multipart/mixed; boundary="foo{bar"');
+            expect(new Multipart([], "foo}bar", "multipart/mixed").headers.get("content-type")).to.equal('multipart/mixed; boundary="foo}bar"');
+        });
+    });
 });
