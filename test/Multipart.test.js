@@ -135,7 +135,10 @@ describe("Multipart", function () {
             const parsedMultipart = Multipart.parse(multipartBytes);
             expect(parsedMultipart).to.be.an.instanceof(Multipart);
             expect(parsedMultipart.parts.length).to.equal(1);
-            expect(new TextDecoder().decode(parsedMultipart.parts[0].bytes())).to.equal("\r\n");
+            const part = parsedMultipart.parts[0];
+            expect(part.bytes()).to.deep.equal(Multipart.CRLF);
+            expect(part.headers).to.be.empty;
+            expect(part.body).to.be.empty;
         });
 
         it("should handle parsing of empty parts in multipart MIME string", function () {
@@ -149,7 +152,10 @@ describe("Multipart", function () {
             const parsedMultipart = Multipart.parse(multipartBytes);
             expect(parsedMultipart).to.be.an.instanceof(Multipart);
             expect(parsedMultipart.parts.length).to.equal(1);
-            expect(new TextDecoder().decode(parsedMultipart.parts[0].bytes())).to.equal("\r\n");
+            const part = parsedMultipart.parts[0];
+            expect(part.bytes()).to.deep.equal(Multipart.CRLF);
+            expect(part.headers).to.be.empty;
+            expect(part.body).to.be.empty;
         });
 
         it("should ignore linear whitespace after boundary delimiter", function () {
