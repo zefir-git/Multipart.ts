@@ -25,6 +25,11 @@ export class Multipart implements Part {
      */
     public static readonly SP = 0x20;
     /**
+     * Horizontal tab (`\t`) ASCII code
+     * @internal
+     */
+    public static readonly HT = 0x09;
+    /**
      * Carriage return (`\r`) ASCII code
      * @internal
      */
@@ -284,7 +289,7 @@ export class Multipart implements Part {
             const byte = data[currentEndOfBoundaryIndex];
             if (byte === Multipart.CR && data[currentEndOfBoundaryIndex + 1] === Multipart.LF)
                 return [boundaryStartIndex, currentEndOfBoundaryIndex + 2];
-            if (byte === Multipart.SP || byte === 0x09) {
+            if (byte === Multipart.SP || byte === Multipart.HT) {
                 currentEndOfBoundaryIndex++;
                 continue;
             }
@@ -434,10 +439,32 @@ export class Multipart implements Part {
         return Multipart.combineArrays(result);
     }
 
+    private static boundaryShouldBeQuoted(boundary: Uint8Array): boolean {
+        for (const byte of boundary) {
+            if (
+                byte === Multipart.HT
+                || byte === Multipart.SP
+                || byte === 0x22 // "
+                || byte === 0x28 // (
+                || byte === 0x29 // )
+                || byte === 0x2c // ,
+                || byte === 0x2f // /
+                || (byte >= Multipart.COLON && byte <= 0x40) // :;<=>@
+                || (byte >= 0x5b && byte <= 0x5d) // [\]
+                || byte === 0x7b // {
+                || byte === 0x7d // }
+            ) return true;
+        }
+        return false;
+    }
+
     /**
      * Set the `Content-Type` header of this multipart based on {@link mediaType} and {@link boundary}.
      */
     private setHeaders() {
-        this.headers.set("Content-Type", this.#mediaType + "; boundary=" + new TextDecoder().decode(this.#boundary));
+        const shouldQuoteBoundary = Multipart.boundaryShouldBeQuoted(this.#boundary);
+        const boundaryString = new TextDecoder().decode(this.#boundary);
+        const boundary = shouldQuoteBoundary ? `"${boundaryString.replace(/"/g, '\\"')}"` : boundaryString;
+        this.headers.set("Content-Type", this.#mediaType + "; boundary=" + boundary);
     }
 }
