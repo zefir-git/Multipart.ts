@@ -25,6 +25,11 @@ export class Multipart implements Part {
      */
     public static readonly SP = 0x20;
     /**
+     * Horizontal tab (`\t`) ASCII code
+     * @internal
+     */
+    public static readonly HT = 0x09;
+    /**
      * Carriage return (`\r`) ASCII code
      * @internal
      */
@@ -284,7 +289,7 @@ export class Multipart implements Part {
             const byte = data[currentEndOfBoundaryIndex];
             if (byte === Multipart.CR && data[currentEndOfBoundaryIndex + 1] === Multipart.LF)
                 return [boundaryStartIndex, currentEndOfBoundaryIndex + 2];
-            if (byte === Multipart.SP || byte === 0x09) {
+            if (byte === Multipart.SP || byte === Multipart.HT) {
                 currentEndOfBoundaryIndex++;
                 continue;
             }
