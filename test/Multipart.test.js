@@ -128,6 +128,93 @@ describe("Multipart", function () {
             expect(parsedMultipart).to.be.an.instanceof(Multipart);
             expect(parsedMultipart.parts).to.be.empty;
         });
+
+        it("should parse Multipart from empty Component bytes", function () {
+            const multipart = new Multipart([new Component({})]);
+            const multipartBytes = multipart.bytes();
+            const parsedMultipart = Multipart.parse(multipartBytes);
+            expect(parsedMultipart).to.be.an.instanceof(Multipart);
+            expect(parsedMultipart.parts.length).to.equal(1);
+            const part = parsedMultipart.parts[0];
+            expect(part.bytes()).to.deep.equal(Multipart.CRLF);
+            expect(part.headers).to.be.empty;
+            expect(part.body).to.be.empty;
+        });
+
+        it("should handle parsing of empty parts in multipart MIME string", function () {
+            const string = "Content-type: multipart/mixed; boundary=\"simple boundary\"\r\n\r\n"
+                + "--simple boundary\r\n"
+                + "\r\n"
+                + "\r\n"
+                + "--simple boundary--\r\n";
+            const multipart = Multipart.parse(new TextEncoder().encode(string));
+            const multipartBytes = multipart.bytes();
+            const parsedMultipart = Multipart.parse(multipartBytes);
+            expect(parsedMultipart).to.be.an.instanceof(Multipart);
+            expect(parsedMultipart.parts.length).to.equal(1);
+            const part = parsedMultipart.parts[0];
+            expect(part.bytes()).to.deep.equal(Multipart.CRLF);
+            expect(part.headers).to.be.empty;
+            expect(part.body).to.be.empty;
+        });
+
+        it("should ignore linear whitespace after boundary delimiter", function () {
+            const string =
+                '--simple boundary    \r\n' +
+                'X-Foo: Bar\r\n' +
+                '\r\n' +
+                'The boundary delimiter of this part has trailing SP.\r\n' +
+                '--simple boundary\t\t\r\n' +
+                'X-Foo: Baz\r\n' +
+                '\r\n' +
+                'The boundary delimiter of this part has trailing tab.\r\n' +
+                '--simple boundary  \t\t\ \r\n' +
+                'X-Foo: Foo\r\n' +
+                '\r\n' +
+                'The boundary delimiter of this part has trailing SP and tab.\r\n' +
+                '--simple boundary--\t \t\r\n'
+
+            const parsedMultipart = Multipart.parseBody(new TextEncoder().encode(string), new TextEncoder().encode("simple boundary"));
+
+            expect(parsedMultipart).to.be.an.instanceof(Multipart);
+            expect(parsedMultipart.parts.length).to.equal(3);
+            const part1 = parsedMultipart.parts[0];
+            expect(part1.headers.get("x-foo")).to.equal("Bar");
+            expect(new TextDecoder().decode(part1.body)).to.equal("The boundary delimiter of this part has trailing SP.");
+            const part2 = parsedMultipart.parts[1];
+            expect(part2.headers.get("x-foo")).to.equal("Baz");
+            expect(new TextDecoder().decode(part2.body)).to.equal("The boundary delimiter of this part has trailing tab.");
+            const part3 = parsedMultipart.parts[2];
+            expect(part3.headers.get("x-foo")).to.equal("Foo");
+            expect(new TextDecoder().decode(part3.body)).to.equal("The boundary delimiter of this part has trailing SP and tab.");
+        });
+
+        it("should handle strings that look like part boundary", function () {
+            const string =
+                '--simple boundary\r\n' +
+                'X-Foo: Bar\r\n' +
+                '\r\n' +
+                'Can this handle\r\n' +
+                '--simple boundary this is fake\r\n' +
+                '\r\n' +
+                'not new part\r\n' +
+                '--simple boundary\r\n' +
+                'X-Foo: Baz\r\n' +
+                '\r\n' +
+                'Final part\r\n' +
+                '--simple boundary--\r\n'
+
+            const parsedMultipart = Multipart.parseBody(new TextEncoder().encode(string), new TextEncoder().encode("simple boundary"));
+
+            expect(parsedMultipart).to.be.an.instanceof(Multipart);
+            expect(parsedMultipart.parts.length).to.equal(2);
+            const part1 = parsedMultipart.parts[0];
+            expect(part1.headers.get("x-foo")).to.equal("Bar");
+            expect(new TextDecoder().decode(part1.body)).to.equal("Can this handle\r\n--simple boundary this is fake\r\n\r\nnot new part");
+            const part2 = parsedMultipart.parts[1];
+            expect(part2.headers.get("x-foo")).to.equal("Baz");
+            expect(new TextDecoder().decode(part2.body)).to.equal("Final part");
+        });
     });
 
     describe("formData", function () {

@@ -181,23 +181,23 @@ export class Multipart implements Part {
             console.warn("Invalid boundary:", new TextDecoder().decode(boundary), "\nMust be 1 to 70 characters long, not end with space, and may only contain: A-Z a-z 0-9 '()+_,-./:=? and space");
 
         const parts: Uint8Array[] = [];
-        const fullBoundarySequence = new Uint8Array(Multipart.combineArrays([Multipart.DOUBLE_DASH, boundary, Multipart.CRLF]));
-        const endBoundarySequence = new Uint8Array(Multipart.combineArrays([Multipart.DOUBLE_DASH, boundary, Multipart.DOUBLE_DASH, Multipart.CRLF]));
+
+        // add artificial CRLF at the start of the data
+        const paddedData = Multipart.combineArrays([Multipart.CRLF, data]);
+        const closingBoundaryDelimiter = Multipart.combineArrays([boundary, Multipart.DOUBLE_DASH]);
 
         let start = 0;
-        while (true) {
-            const boundaryIndex = Multipart.findSequenceIndex(data, fullBoundarySequence, start);
-            if (boundaryIndex === -1) break;
-
-            const partStart = boundaryIndex + fullBoundarySequence.length;
-            const nextBoundaryIndex = Multipart.findSequenceIndex(data, fullBoundarySequence, partStart);
-            const endBoundaryIndex = Multipart.findSequenceIndex(data, endBoundarySequence, partStart);
-
-            // -2 to ignore the mandatory CRLF at the end of the body
-            const partEnd = nextBoundaryIndex === -1 ? (endBoundaryIndex === -1 ? data.length : endBoundaryIndex - 2) : nextBoundaryIndex - 2;
-
-            if (partStart < partEnd) parts.push(data.slice(partStart, partEnd));
-            start = partEnd;
+        while (start < paddedData.length) {
+            const boundaryIndices = Multipart.findBoundaryBounds(paddedData, boundary, start);
+            if (boundaryIndices === null) break;
+            const [, boundaryEnd] = boundaryIndices;
+            const nextBoundaryIndices =
+                Multipart.findBoundaryBounds(paddedData, boundary, boundaryEnd + 1)
+                ?? Multipart.findBoundaryBounds(paddedData, closingBoundaryDelimiter, boundaryEnd + 1);
+            if (nextBoundaryIndices === null) break;
+            const [nextBoundaryStart] = nextBoundaryIndices;
+            parts.push(paddedData.slice(boundaryEnd, nextBoundaryStart));
+            start = nextBoundaryStart;
         }
 
         const parsedParts = parts.map(Component.parse);
@@ -265,6 +265,35 @@ export class Multipart implements Part {
             }
 
         return -1;
+    }
+
+    /**
+     * Find boundary delimiter start and end index
+     * @param data Multipart body bytes
+     * @param boundary The multipart boundary bytes
+     * @param [start] The index to start the search at (i.e. the number of bytes to skip/ignore at the beginning of the byte array). Defaults to 0.
+     * @returns The start and end index of the boundary delimiter, or `null` if no boundary delimiter can be found
+     * @internal
+     */
+    private static findBoundaryBounds(data: Uint8Array, boundary: Uint8Array, start = 0): [number, number] | null {
+        if (start >= data.length) return null;
+        const boundaryStartIndex = Multipart.findSequenceIndex(data, Multipart.combineArrays([Multipart.CRLF, Multipart.DOUBLE_DASH, boundary]), start);
+        if (boundaryStartIndex === -1) return null;
+        let currentEndOfBoundaryIndex = boundaryStartIndex + boundary.length + 4;
+        while (currentEndOfBoundaryIndex < data.length) {
+            const byte = data[currentEndOfBoundaryIndex];
+            if (byte === Multipart.CR && data[currentEndOfBoundaryIndex + 1] === Multipart.LF)
+                return [boundaryStartIndex, currentEndOfBoundaryIndex + 2];
+            if (byte === Multipart.SP || byte === 0x09) {
+                currentEndOfBoundaryIndex++;
+                continue;
+            }
+            // encountered non-linear whitespace after boundary and before any CRLF
+            // meaning the boundary could not be terminated, therefore continue search for boundary
+            return Multipart.findBoundaryBounds(data, boundary, boundaryStartIndex + 2);
+        }
+
+        return null;
     }
 
     /**
