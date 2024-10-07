@@ -444,15 +444,15 @@ export class Multipart implements Part {
             if (
                 byte === Multipart.HT
                 || byte === Multipart.SP
-                || byte === 0x22
-                || byte === 0x28
-                || byte === 0x29
-                || byte === 0x2c
-                || byte === 0x2f
-                || (byte >= Multipart.COLON && byte <= 0x40)
-                || (byte >= 0x5b && byte <= 0x5d)
-                || byte === 0x7b
-                || byte === 0x7d
+                || byte === 0x22 // "
+                || byte === 0x28 // (
+                || byte === 0x29 // )
+                || byte === 0x2c // ,
+                || byte === 0x2f // /
+                || (byte >= Multipart.COLON && byte <= 0x40) // :;<=>@
+                || (byte >= 0x5b && byte <= 0x5d) // [\]
+                || byte === 0x7b // {
+                || byte === 0x7d // }
             ) return true;
         }
         return false;
