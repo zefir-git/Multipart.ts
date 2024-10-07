@@ -146,7 +146,7 @@ export class Multipart implements Part {
      * Get the bytes of the body of this multipart. Includes all parts separated by the boundary.
      * Does not include the headers.
      *
-     * @throws {RangeError} If the multipart boundary is invalid. A valid boundary is 1 to 70 characters long,
+     * @throws {@link !RangeError} If the multipart boundary is invalid. A valid boundary is 1 to 70 characters long,
      * does not end with space, and may only contain: A-Z a-z 0-9 '()+_,-./:=? and space
      */
     public get body(): Uint8Array {
@@ -428,7 +428,7 @@ export class Multipart implements Part {
     /**
      * Get the bytes of the headers and {@link body} of this multipart.
      *
-     * @throws {RangeError} If the multipart boundary is invalid. A valid boundary is 1 to 70 characters long,
+     * @throws {@link !RangeError} If the multipart boundary is invalid. A valid boundary is 1 to 70 characters long,
      * does not end with space, and may only contain: A-Z a-z 0-9 '()+_,-./:=? and space
      */
     public bytes(): Uint8Array {
