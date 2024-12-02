@@ -26,7 +26,7 @@
     "devDependencies": {
         "chai": "^5.1.1",
         "mocha": "^10.7.0",
-        "typedoc": "^0.26.5",
+        "typedoc": "^0.27.2",
         "typedoc-plugin-mdn-links": "^4.0.1",
         "typescript": "^5.5.4"
     }
