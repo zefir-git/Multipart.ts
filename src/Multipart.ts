@@ -439,6 +439,16 @@ export class Multipart implements Part {
         return Multipart.combineArrays(result);
     }
 
+    /**
+     * Create Blob from this multipart.
+     *
+     * @throws {@link !RangeError} If the multipart boundary is invalid. A valid boundary is 1 to 70 characters long,
+     * does not end with space, and may only contain: A-Z a-z 0-9 '()+_,-./:=? and space.
+     */
+    public blob(): Blob {
+        return new Blob([this.bytes()], {type: this.headers.get("content-type") ?? undefined});
+    }
+
     private static boundaryShouldBeQuoted(boundary: Uint8Array): boolean {
         for (const byte of boundary) {
             if (
