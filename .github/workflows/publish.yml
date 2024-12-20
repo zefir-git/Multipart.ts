@@ -43,7 +43,7 @@ jobs:
         run: npm run docs
 
       - name: Set up pages
-        uses: actions/configure-pages@v4
+        uses: actions/configure-pages@v5
 
       - name: Upload docs artifact to pages
         uses: actions/upload-pages-artifact@v3
