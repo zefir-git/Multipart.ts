@@ -46,17 +46,14 @@ http.createServer(async (req, res) => {
     if (req.method === "POST" && req.headers["content-type"]) {
 
         // get the request body
-        const chunks: Uint8Array[] = [];
+        const body: Uint8Array[] = [];
         for await (const chunk of req)
-            chunks.push(chunk);
-        const body = Buffer.concat(chunks);
+            body.push(chunk);
 
-        // create a multipart component to hold the content-type header (which includes the boundary) and the body
-        const component = new Component({
-                "Content-Type": req.headers["content-type"]
-            }, body);
-        // parse multipart from the component
-        const multipart = Multipart.part(component);
+        // create a blob to hold the Content-Type header (which includes the boundary) and the body
+        const blob = new Blob(body, {type: req.headers["content-type"]});
+        // parse multipart from the blob
+        const multipart = await Multipart.blob(blob);
         console.log(multipart);
 
         res.end("ok");

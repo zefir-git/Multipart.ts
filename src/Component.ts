@@ -43,15 +43,28 @@ export class Component implements Part {
     }
 
     /**
-     * Create a Component from a {@link File}. If file media type is available,
+     * Create a Component from a {@link !File}. If file media type is available,
      * it will be set in the `Content-Type` header. The file's contents will be used as the part's body.
      *
      * This method might be slow if a large file is provided as the file contents need to be read.
      *
      * @param file File instance to create the component from
+     * @deprecated Use {@link Component.blob}.
      */
     public static async file(file: File) {
-        return new Component(file.type.length > 0 ? {"Content-Type": file.type} : {}, await file.arrayBuffer());
+        return await Component.blob(file);
+    }
+
+    /**
+     * Create a Component from a {@link !Blob}. If blob media type is available,
+     * it will be set in the `Content-Type` header. The blob's contents will be used as the part's body.
+     *
+     * This method might be slow if a large file is provided as the blob contents need to be read.
+     *
+     * @param blob Blob to create the component from
+     */
+    public static async blob(blob: Blob) {
+        return new Component(blob.type.length > 0 ? {"Content-Type": blob.type} : {}, await blob.arrayBuffer());
     }
 
     public bytes(): Uint8Array {
@@ -66,5 +79,12 @@ export class Component implements Part {
         result.push(Multipart.CRLF);
         result.push(this.body);
         return Multipart.combineArrays(result);
+    }
+
+    /**
+     * A Blob representation of this component. Headers will be lost.
+     */
+    public blob(): Blob {
+        return new Blob([this.body], {type: this.headers.get("Content-Type") ?? undefined});
     }
 }
