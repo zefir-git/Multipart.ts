@@ -232,6 +232,19 @@ export class Multipart implements Part {
     }
 
     /**
+     * Create Multipart from a {@link !Blob}. The boundary and media type are determined from the blob's type.
+     * @param blob The blob
+     * @throws {@link !SyntaxError} If the `Content-Type` header is missing or does not include a boundary
+     */
+    public static async blob(blob: Blob): Promise<Multipart> {
+        const type = blob.type;
+        if (type === "") throw new SyntaxError("Blob is missing Content-Type header");
+        const {mediaType, boundary} = Multipart.parseContentType(type);
+        if (boundary === null) throw new SyntaxError("Missing boundary in Content-Type header of blob");
+        return Multipart.parseBody(new Uint8Array(await blob.arrayBuffer()), new TextEncoder().encode(boundary), mediaType ?? void 0);
+    }
+
+    /**
      * Create Multipart from {@link FormData}.
      * This method might be slow if the form data contains large files.
      *
