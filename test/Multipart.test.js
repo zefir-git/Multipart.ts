@@ -1,10 +1,11 @@
-import { Multipart, Component} from "../dist/index.js";
-import { expect } from "chai";
+import {Multipart, Component} from "../dist/index.js";
+import {expect} from "chai";
+import {describe} from "mocha";
 
 describe("Multipart", function () {
     describe("constructor", function () {
         it("should initialize with default boundary and mediaType", function () {
-            const component = new Component({ "content-type": "text/plain" }, new TextEncoder().encode("foo bar"));
+            const component = new Component({"content-type": "text/plain"}, new TextEncoder().encode("foo bar"));
             const multipart = new Multipart([component]);
 
             expect(multipart.boundary).to.be.an.instanceof(Uint8Array);
@@ -14,7 +15,7 @@ describe("Multipart", function () {
         it("should accept a custom boundary and mediaType", function () {
             const boundary = "my-custom-boundary";
             const mediaType = "Multipart/form-data";
-            const component = new Component({ "x-foo": "bar" }, new TextEncoder().encode("custom content"));
+            const component = new Component({"x-foo": "bar"}, new TextEncoder().encode("custom content"));
             const multipart = new Multipart([component], boundary, mediaType);
 
             expect(new TextDecoder().decode(multipart.boundary)).to.equal(boundary);
@@ -32,8 +33,8 @@ describe("Multipart", function () {
     describe("parse", function () {
         it("should parse Multipart data correctly", function () {
             const boundary = "my-boundary";
-            const component1 = new Component({ "x-foo": "bar" }, new TextEncoder().encode("Component1 content"));
-            const component2 = new Component({ "content-type": "text/plain" }, new TextEncoder().encode("Component2 content"));
+            const component1 = new Component({"x-foo": "bar"}, new TextEncoder().encode("Component1 content"));
+            const component2 = new Component({"content-type": "text/plain"}, new TextEncoder().encode("Component2 content"));
             const multipart = new Multipart([component1, component2], boundary);
 
             const multipartBytes = multipart.bytes();
@@ -90,10 +91,10 @@ describe("Multipart", function () {
 
         it("should handle nested multiparts", function () {
             const components = [
-                new Component({ "x-foo": "bar" }, new TextEncoder().encode("foo bar")),
+                new Component({"x-foo": "bar"}, new TextEncoder().encode("foo bar")),
                 new Multipart([
-                    new Component({ "content-type": "text/plain" }, new TextEncoder().encode("nested Component 1")),
-                    new Component({ "content-type": "application/json" }, new TextEncoder().encode(JSON.stringify({ foo: "bar" })))
+                    new Component({"content-type": "text/plain"}, new TextEncoder().encode("nested Component 1")),
+                    new Component({"content-type": "application/json"}, new TextEncoder().encode(JSON.stringify({foo: "bar"})))
                 ], "inner-boundary")
             ];
             const multipart = new Multipart(components, "outer-boundary");
@@ -112,7 +113,7 @@ describe("Multipart", function () {
             expect(parsedInnerMultipart.parts[0].headers.get("content-type")).to.equal("text/plain");
             expect(new TextDecoder().decode(parsedInnerMultipart.parts[0].body)).to.equal("nested Component 1");
             expect(parsedInnerMultipart.parts[1].headers.get("content-type")).to.equal("application/json");
-            expect(new TextDecoder().decode(parsedInnerMultipart.parts[1].body)).to.equal(JSON.stringify({ foo: "bar" }));
+            expect(new TextDecoder().decode(parsedInnerMultipart.parts[1].body)).to.equal(JSON.stringify({foo: "bar"}));
         });
 
         it("should handle malformed Multipart data", function () {
@@ -217,6 +218,25 @@ describe("Multipart", function () {
         });
     });
 
+    describe("part", function () {
+        it("should create Multipart from Part", function () {
+            const multipart = new Multipart([
+                new Component({"content-type": "text/plain", "x-foo": "bar"}, new TextEncoder().encode("foo bar")),
+                new Component({}, new TextEncoder().encode("test content"))
+            ]);
+            const part = new Component({"Content-Type": multipart.headers.get("content-type")}, multipart.bytes());
+
+            const parsedMultipart = Multipart.part(part);
+            expect(parsedMultipart).to.be.an.instanceof(Multipart);
+            expect(parsedMultipart.parts.length).to.equal(2);
+            expect(parsedMultipart.parts[0].headers.get("content-type")).to.equal("text/plain");
+            expect(parsedMultipart.parts[0].headers.get("x-foo")).to.equal("bar");
+            expect(new TextDecoder().decode(parsedMultipart.parts[0].body)).to.equal("foo bar");
+            expect(parsedMultipart.parts[1].headers.get("content-type")).to.equal(null);
+            expect(new TextDecoder().decode(parsedMultipart.parts[1].body)).to.equal("test content");
+        });
+    });
+
     describe("formData", function () {
         it("should correctly create Multipart from FormData", async function () {
             const formData = new FormData();
@@ -259,7 +279,7 @@ describe("Multipart", function () {
     });
 
     describe("#formData", function () {
-        it ("should correctly return the FormData of the Multipart", async function () {
+        it("should correctly return the FormData of the Multipart", async function () {
             const formData = new FormData();
             formData.append("foo", "bar");
             formData.append("bar", "baz");
@@ -278,7 +298,7 @@ describe("Multipart", function () {
             expect(new TextDecoder().decode(await file.arrayBuffer())).to.equal("console.log('hello world');");
         });
 
-        it("should handle empty FormData multipart", async function (){
+        it("should handle empty FormData multipart", async function () {
             const multipart = await Multipart.formData(new FormData());
             const formData = multipart.formData();
             expect(formData).to.be.an.instanceof(FormData);
@@ -289,7 +309,7 @@ describe("Multipart", function () {
     describe("#body", function () {
         it("should correctly return the body of the Multipart", function () {
             const boundary = "test-boundary";
-            const component = new Component({ "content-type": "text/plain" }, new TextEncoder().encode("test body"));
+            const component = new Component({"content-type": "text/plain"}, new TextEncoder().encode("test body"));
             const multipart = new Multipart([component], boundary);
 
             const body = multipart.body;
@@ -327,7 +347,7 @@ describe("Multipart", function () {
     describe("#bytes", function () {
         it("should correctly return the bytes of the Multipart", function () {
             const boundary = "test-boundary";
-            const component = new Component({ "x-foo": "bar" }, new TextEncoder().encode("test content"));
+            const component = new Component({"x-foo": "bar"}, new TextEncoder().encode("test content"));
             const multipart = new Multipart([component], boundary);
 
             const bytes = multipart.bytes();

@@ -1,5 +1,6 @@
 import {expect} from "chai";
 import {Multipart, Component} from "../dist/index.js";
+import {describe} from "mocha";
 
 describe("Component", () => {
 
