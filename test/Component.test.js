@@ -79,6 +79,22 @@ describe("Component", () => {
         });
     });
 
+    describe("blob", () => {
+        it("should create Component from Blob with type", async () => {
+            const blob = new Blob([new Uint8Array([1, 2, 3])], {type: "text/plain"});
+            const component = await Component.blob(blob);
+            expect(component.headers.get("Content-Type")).to.equal("text/plain");
+            expect(component.body).to.deep.equal(new Uint8Array([1, 2, 3]));
+        });
+
+        it ("should create Component from Blob without type", async () => {
+            const blob = new Blob([new Uint8Array([1, 2, 3])]);
+            const component = await Component.blob(blob);
+            expect(component.headers.get("Content-Type")).to.equal(null);
+            expect(component.body).to.deep.equal(new Uint8Array([1, 2, 3]));
+        });
+    });
+
     describe("#bytes", () => {
         it("should return the bytes of a Component with headers and body", () => {
             const headersInit = {"Content-Type": "text/plain", "Content-Length": "3"};
@@ -95,6 +111,25 @@ describe("Component", () => {
             const bytes = component.bytes();
             const expected = 'content-length: 3\r\ncontent-type: text/plain\r\n\r\n';
             expect(new TextDecoder().decode(bytes)).to.equal(expected);
+        });
+    });
+
+    describe("#blob", () => {
+        it("should return the Blob of a Component with headers and body", async () => {
+            const headersInit = {"Content-Type": "text/plain", "Content-Length": "3"};
+            const body = new Uint8Array([1, 2, 3]);
+            const component = new Component(headersInit, body);
+            const blob = component.blob();
+            expect(blob.type).to.equal("text/plain");
+            expect(await blob.bytes()).to.deep.equal(body);
+        });
+
+        it("should return the Blob of a Component with only headers", async () => {
+            const headersInit = {"Content-Type": "text/plain", "Content-Length": "3"};
+            const component = new Component(headersInit);
+            const blob = component.blob();
+            expect(blob.type).to.equal("text/plain");
+            expect(await blob.bytes()).to.deep.equal(new Uint8Array(0));
         });
     });
 });
