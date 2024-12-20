@@ -79,4 +79,11 @@ export class Component implements Part {
         result.push(this.body);
         return Multipart.combineArrays(result);
     }
+
+    /**
+     * A Blob representation of this component. Headers will be lost.
+     */
+    public blob(): Blob {
+        return new Blob([this.body], {type: this.headers.get("Content-Type") ?? undefined});
+    }
 }
