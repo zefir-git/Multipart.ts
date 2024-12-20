@@ -20,7 +20,7 @@
     "author": "Zefir",
     "license": "LGPL-3.0-only",
     "repository": {
-        "url": "github:zefir-git/Multipart.ts"
+        "url": "git+https://github.com/zefir-git/Multipart.ts.git"
     },
     "description": "TypeScript library for multipart data parsing and creation",
     "devDependencies": {
