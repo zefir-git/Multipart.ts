@@ -43,15 +43,16 @@ export class Component implements Part {
     }
 
     /**
-     * Create a Component from a {@link File}. If file media type is available,
+     * Create a Component from a {@link !File}. If file media type is available,
      * it will be set in the `Content-Type` header. The file's contents will be used as the part's body.
      *
      * This method might be slow if a large file is provided as the file contents need to be read.
      *
      * @param file File instance to create the component from
+     * @deprecated Use {@link Component.blob}.
      */
     public static async file(file: File) {
-        return new Component(file.type.length > 0 ? {"Content-Type": file.type} : {}, await file.arrayBuffer());
+        return await Component.blob(file);
     }
 
     /**
