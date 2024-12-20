@@ -237,6 +237,28 @@ describe("Multipart", function () {
         });
     });
 
+    describe("blob", async function () {
+        it("should create Multipart from Blob with type", async function () {
+            const boundary = "example-boundary";
+            const component1 = new Component({"x-foo": "bar"}, new TextEncoder().encode("Component1 content"));
+            const component2 = new Component({"content-type": "text/plain"}, new TextEncoder().encode("Component2 content"));
+            const multipart = new Multipart([component1, component2], boundary);
+
+            const blob = multipart.blob();
+            const parsedMultipart = await Multipart.blob(blob);
+
+            expect(parsedMultipart).to.be.an.instanceof(Multipart);
+            expect(new TextDecoder().decode(parsedMultipart.boundary)).to.equal(boundary);
+            expect(parsedMultipart.parts.length).to.equal(2);
+            const part1 = parsedMultipart.parts[0];
+            expect(part1.headers.get("x-foo")).to.equal("bar");
+            expect(part1.body).to.deep.equal(component1.body);
+            const part2 = parsedMultipart.parts[1];
+            expect(part2.headers.get("content-type")).to.equal("text/plain");
+            expect(part2.body).to.deep.equal(component2.body);
+        });
+    });
+
     describe("formData", function () {
         it("should correctly create Multipart from FormData", async function () {
             const formData = new FormData();
@@ -382,6 +404,19 @@ describe("Multipart", function () {
             expect(() => new Multipart([], "foo:bar").bytes()).to.not.throw();
             expect(() => new Multipart([], "foo=bar").bytes()).to.not.throw();
             expect(() => new Multipart([], "foo?bar").bytes()).to.not.throw();
+        });
+    });
+
+    describe("#blob", async function () {
+        it("should correctly return the blob of the Multipart", async function () {
+            const boundary = "test-boundary";
+            const component = new Component({"x-foo": "bar"}, new TextEncoder().encode("test content"));
+            const multipart = new Multipart([component], boundary);
+
+            const blob = multipart.blob();
+
+            expect(blob.type).to.equal(multipart.headers.get("content-type"));
+            expect(await blob.bytes()).to.deep.equal(multipart.bytes());
         });
     });
 
