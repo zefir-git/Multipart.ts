@@ -12,7 +12,7 @@ export class Component implements Part {
      * @param headers The headers of the component
      * @param [body] The body of the component. Defaults to empty if null or undefined.
      */
-    public constructor(headers: HeadersInit, body?: ArrayLike<number> | ArrayBufferLike | null) {
+    public constructor(headers: HeadersInit, body?: ArrayLike<number> | ArrayBuffer | null) {
         this.headers = new Headers(headers);
         this.body = body === undefined || body === null ? new Uint8Array(0) : new Uint8Array(body);
     }
