@@ -104,3 +104,11 @@ const parsed: Multipart = Multipart.parse(data);
 
 console.log(new TextDecoder().decode(parsed.parts[0].body)); // Hello world!
 ```
+
+## Licence
+
+
+Copyright © 2024–2025 Zefir Kirilov.
+
+This project is licensed under the GNU Lesser General Public License v3.0 (LGPL-3.0). A copy of the licence text is
+included in this repository. If not, see https://www.gnu.org/licenses/.
