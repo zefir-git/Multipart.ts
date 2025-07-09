@@ -1,69 +1,70 @@
 import {Component, Part} from "./index.js";
 
 /**
- * A collection of {@link Part}s
+ * A multipart message comprised of headers and {@link Part} instances.
  */
 export class Multipart implements Part {
     /**
-     * Colon (`:`) ASCII code
+     * Colon (`:`) ASCII code.
      * @internal
      */
     public static readonly COLON = 0x3A;
     /**
-     * Dash (`-`) ASCII code
+     * Dash (`-`) ASCII code.
      * @internal
      */
     public static readonly DASH = 0x2D;
     /**
-     * Uint8Array of double {@link DASH} (`--`)
+     * Uint8Array of double {@link DASH} (`--`).
      * @internal
      */
     public static readonly DOUBLE_DASH = new Uint8Array([this.DASH, this.DASH]);
     /**
-     * Space (` `) ASCII code
+     * Space (` `) ASCII code.
      * @internal
      */
     public static readonly SP = 0x20;
     /**
-     * Horizontal tab (`\t`) ASCII code
+     * Horizontal tab (`\t`) ASCII code.
      * @internal
      */
     public static readonly HT = 0x09;
     /**
-     * Carriage return (`\r`) ASCII code
+     * Carriage return (`\r`) ASCII code.
      * @internal
      */
     public static readonly CR = 0x0D;
     /**
-     * Line feed (`\n`) ASCII code
+     * Line feed (`\n`) ASCII code.
      * @internal
      */
     public static readonly LF = 0x0A;
     /**
-     * Uint8Array of {@link CR} and {@link LF} (`\r\n`)
+     * Uint8Array of {@link CR} and {@link LF} (`\r\n`).
      * @internal
      */
     public static readonly CRLF = new Uint8Array([this.CR, this.LF]);
 
     /**
-     * The headers of this multipart
+     * The headers of this multipart message.
      */
     public readonly headers = new Headers();
     /**
-     * Boundary bytes
+     * Byte representation of the multipart boundary.
      */
     #boundary: Uint8Array;
 
     /**
-     * Media type
+     * The multipart media type.
      */
     #mediaType: string;
 
     /**
-     * Create a new Multipart instance
-     * @param parts The parts to include in the multipart
-     * @param [boundary] The multipart boundary used to separate the parts. Randomly generated if not provided
-     * @param [mediaType] The media type of the multipart. Defaults to "multipart/mixed"
+     * Creates a new Multipart instance.
+     *
+     * @param parts The parts to include in the multipart.
+     * @param [boundary] The multipart boundary used to separate the parts. Randomly generated if not provided.
+     * @param [mediaType=multipart/mixed] The media type of the multipart.
      */
     public constructor(public readonly parts: Part[], boundary: Uint8Array | string = crypto.randomUUID(), mediaType: string = "multipart/mixed") {
         this.#boundary = typeof boundary === "string" ? new TextEncoder().encode(boundary) : boundary;
@@ -72,55 +73,14 @@ export class Multipart implements Part {
     }
 
     /**
-     * Check if the boundary is valid
-     * A valid boundary is 1 to 70 characters long, does not end with space, and may only contain:
-     * A-Z a-z 0-9 '()+_,-./:=? and space
-     *
-     * ```bnf
-     * boundary := 0*69<bchars> bcharsnospace
-     *
-     * bchars := bcharsnospace / " "
-     *
-     * bcharsnospace := DIGIT / ALPHA / "'" / "(" / ")" /
-     *                  "+" / "_" / "," / "-" / "." /
-     *                  "/" / ":" / "=" / "?"
-     * ```
-     *
-     * From: RFC 2046, Section 5.1.1. Common Syntax
-     *
-     * @internal
-     */
-    private static isValidBoundary(boundary: Uint8Array): boolean {
-        if (boundary.length < 1 || boundary.length > 70 || boundary[boundary.length - 1] === Multipart.SP)
-            return false;
-
-        for (const char of boundary) {
-            if (char >= 0x30 && char <= 0x39) continue;
-            if ((char >= 0x41 && char <= 0x5a) || (char >= 0x61 && char <= 0x7a)) continue;
-            if (
-                char === Multipart.SP ||
-                (char >= 0x27 && char <= 0x29) ||
-                (char >= 0x2b && char <= 0x2f) ||
-                char === 0x3a ||
-                char === 0x3d ||
-                char === 0x3f ||
-                char === 0x5f
-            ) continue;
-            return false;
-        }
-
-        return true;
-    }
-
-    /**
-     * Get the boundary bytes used to separate the parts
+     * Gets the boundary bytes used to separate the parts.
      */
     public get boundary(): Uint8Array {
         return this.#boundary;
     }
 
     /**
-     * Set the boundary bytes used to separate the parts
+     * Sets the boundary bytes used to separate the parts.
      */
     public set boundary(boundary: Uint8Array | string) {
         this.#boundary = typeof boundary === "string" ? new TextEncoder().encode(boundary) : boundary;
@@ -128,26 +88,11 @@ export class Multipart implements Part {
     }
 
     /**
-     * The media type of the multipart
-     * @example "multipart/mixed"
-     * @example "multipart/form-data"
-     * @example "multipart/byteranges"
-     */
-    public get mediaType(): string {
-        return this.#mediaType;
-    }
-
-    public set mediaType(mediaType: string) {
-        this.#mediaType = mediaType;
-        this.setHeaders();
-    }
-
-    /**
-     * Get the bytes of the body of this multipart. Includes all parts separated by the boundary.
+     * Gets the bytes of the body of this multipart. Includes all parts separated by the boundary.
      * Does not include the headers.
      *
      * @throws {@link !RangeError} If the multipart boundary is invalid. A valid boundary is 1 to 70 characters long,
-     * does not end with space, and may only contain: A-Z a-z 0-9 '()+_,-./:=? and space
+     * does not end with space, and may only contain: A-Z a-z 0-9 '()+_,-./:=? and space.
      */
     public get body(): Uint8Array {
         if (!Multipart.isValidBoundary(this.#boundary))
@@ -160,8 +105,30 @@ export class Multipart implements Part {
     }
 
     /**
-     * Concatenate any number of number arrays into a single Uint8Array
-     * @param arrays The array of arrays
+     * Gets the media type of the multipart.
+     * @example "multipart/mixed"
+     * @example "multipart/form-data"
+     * @example "multipart/byteranges"
+     */
+    public get mediaType(): string {
+        return this.#mediaType;
+    }
+
+    /**
+     * Sets the media type of the multipart.
+     * @example "multipart/mixed"
+     * @example "multipart/form-data"
+     * @example "multipart/byteranges"
+     */
+    public set mediaType(mediaType: string) {
+        this.#mediaType = mediaType;
+        this.setHeaders();
+    }
+
+    /**
+     * Concatenates any number of number arrays into a single Uint8Array.
+     *
+     * @param arrays The arrays to concatenate.
      * @internal
      */
     public static combineArrays(arrays: ArrayLike<number>[]): Uint8Array {
@@ -176,19 +143,20 @@ export class Multipart implements Part {
     }
 
     /**
-     * Parse multipart body data
-     * @param data Multipart body bytes
-     * @param boundary The multipart boundary bytes used in the body bytes to separate the parts
-     * @param [mediaType] Multipart media type to pass to the constructor
+     * Parses the body of a multipart message and returns a new Multipart instance.
+     *
+     * @param body The byte representation of the multipart message body.
+     * @param boundary The multipart boundary bytes used in the body to separate the parts.
+     * @param [mediaType] Multipart media type to pass to the constructor.
      */
-    public static parseBody(data: Uint8Array, boundary: Uint8Array, mediaType?: string): Multipart {
+    public static parseBody(body: Uint8Array, boundary: Uint8Array, mediaType?: string): Multipart {
         if (!Multipart.isValidBoundary(boundary))
             console.warn("Invalid boundary:", new TextDecoder().decode(boundary), "\nMust be 1 to 70 characters long, not end with space, and may only contain: A-Z a-z 0-9 '()+_,-./:=? and space");
 
         const parts: Uint8Array[] = [];
 
         // add artificial CRLF at the start of the data
-        const paddedData = Multipart.combineArrays([Multipart.CRLF, data]);
+        const paddedData = Multipart.combineArrays([Multipart.CRLF, body]);
         const closingBoundaryDelimiter = Multipart.combineArrays([boundary, Multipart.DOUBLE_DASH]);
 
         let start = 0;
@@ -210,18 +178,22 @@ export class Multipart implements Part {
     }
 
     /**
-     * Parse multipart bytes (including headers). The boundary and media type are determined from the headers.
-     * @param data Byte representation of the multipart headers and body
-     * @throws {@link !SyntaxError} If the `Content-Type` header is missing or does not include a boundary
+     * Parses a multipart message (including headers). The boundary and media type are determined from the headers,
+     * specifically `Content-Type`.
+     *
+     * @param data The byte representation of the multipart message (including both headers and body).
+     * @throws {@link !SyntaxError} If the `Content-Type` header is missing or does not include a boundary.
      */
     public static parse(data: Uint8Array): Multipart {
         return Multipart.part(Component.parse(data));
     }
 
     /**
-     * Create Multipart from a {@link Part}. The boundary and media type are determined from the part's headers.
-     * @param part The part
-     * @throws {@link !SyntaxError} If the `Content-Type` header is missing or does not include a boundary
+     * Creates a Multipart instance from a {@link Part}. The boundary and media type are determined from the part’s
+     * `Content-Type` header.
+     *
+     * @param part The part from which to create the multipart message.
+     * @throws {@link !SyntaxError} If the `Content-Type` header is missing or does not include a boundary.
      */
     public static part(part: Part): Multipart {
         const type = part.headers.get("content-type");
@@ -232,8 +204,10 @@ export class Multipart implements Part {
     }
 
     /**
-     * Create Multipart from a {@link !Blob}. The boundary and media type are determined from the blob's type.
-     * @param blob The blob
+     * Creates a Multipart instance from a {@link !Blob}. The boundary and media type are determined from the blob’s
+     * type.
+     *
+     * @param blob The blob from which to create the multipart message.
      * @throws {@link !SyntaxError} If the `Content-Type` header is missing or does not include a boundary
      */
     public static async blob(blob: Blob): Promise<Multipart> {
@@ -245,11 +219,12 @@ export class Multipart implements Part {
     }
 
     /**
-     * Create Multipart from {@link FormData}.
-     * This method might be slow if the form data contains large files.
+     * Creates Multipart instances from {@link !FormData}. This method might be slow if the form data contains large
+     * files as they will be read into memory.
      *
-     * @param formData Form data
-     * @param [boundary] Multipart boundary to use to separate the parts. If not provided, a random boundary will be generated.
+     * @param formData Form data from which to create the multipart message.
+     * @param [boundary] Multipart boundary to use to separate the parts. If not provided, a random boundary will be
+     *     generated.
      */
     public static async formData(formData: FormData, boundary?: Uint8Array | string): Promise<Multipart> {
         const parts: Component[] = [];
@@ -267,10 +242,12 @@ export class Multipart implements Part {
     }
 
     /**
-     * Find the index of a sequence in a byte array
-     * @param data The byte array
-     * @param sequence Sequence of bytes to search for
-     * @param [start] The index to start the search at (i.e. the number of bytes to skip/ignore at the beginning of the byte array). Defaults to 0.
+     * Finds the index of a sequence in a byte array.
+     *
+     * @param data The byte array.
+     * @param sequence Sequence of bytes to search for.
+     * @param [start] The index to start the search at (i.e. the number of bytes to skip/ignore at the beginning of the
+     *     byte array). Defaults to 0.
      * @internal
      */
     public static findSequenceIndex(data: Uint8Array, sequence: ArrayLike<number>, start = 0) {
@@ -286,21 +263,66 @@ export class Multipart implements Part {
     }
 
     /**
-     * Find boundary delimiter start and end index
-     * @param data Multipart body bytes
-     * @param boundary The multipart boundary bytes
-     * @param [start] The index to start the search at (i.e. the number of bytes to skip/ignore at the beginning of the byte array). Defaults to 0.
-     * @returns The start and end index of the boundary delimiter, or `null` if no boundary delimiter can be found
+     * Checks if the boundary is valid.
+     *
+     * A valid boundary is 1 to 70 characters long, does not end with space, and may only contain:
+     * A-Z a-z 0-9 '()+_,-./:=? and space.
+     *
+     * ```bnf
+     * boundary := 0*69<bchars> bcharsnospace
+     *
+     * bchars := bcharsnospace / " "
+     *
+     * bcharsnospace := DIGIT / ALPHA / "'" / "(" / ")" /
+     *                  "+" / "_" / "," / "-" / "." /
+     *                  "/" / ":" / "=" / "?"
+     * ```
+     *
+     * From RFC 2046, Section 5.1.1. Common Syntax.
+     *
+     * @param boundary The boundary bytes to check.
      * @internal
      */
-    private static findBoundaryBounds(data: Uint8Array, boundary: Uint8Array, start = 0): [number, number] | null {
-        if (start >= data.length) return null;
-        const boundaryStartIndex = Multipart.findSequenceIndex(data, Multipart.combineArrays([Multipart.CRLF, Multipart.DOUBLE_DASH, boundary]), start);
+    private static isValidBoundary(boundary: Uint8Array): boolean {
+        if (boundary.length < 1 || boundary.length > 70 || boundary.at(-1) === Multipart.SP)
+            return false;
+
+        for (const char of boundary) {
+            if (char >= 0x30 && char <= 0x39) continue;
+            if ((char >= 0x41 && char <= 0x5a) || (char >= 0x61 && char <= 0x7a)) continue;
+            if (
+                char === Multipart.SP ||
+                (char >= 0x27 && char <= 0x29) ||
+                (char >= 0x2b && char <= 0x2f) ||
+                char === 0x3a ||
+                char === 0x3d ||
+                char === 0x3f ||
+                char === 0x5f
+            ) continue;
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Finds start and end index of the boundary delimiter.
+     *
+     * @param body The multipart message body.
+     * @param boundary The multipart boundary byte sequence.
+     * @param [start] The index to start the search at (i.e. the number of bytes to skip/ignore at the beginning of the
+     *     byte array). Defaults to 0.
+     * @returns The start and end index of the boundary delimiter, or `null` if no boundary delimiter can be found.
+     * @internal
+     */
+    private static findBoundaryBounds(body: Uint8Array, boundary: Uint8Array, start = 0): [number, number] | null {
+        if (start >= body.length) return null;
+        const boundaryStartIndex = Multipart.findSequenceIndex(body, Multipart.combineArrays([Multipart.CRLF, Multipart.DOUBLE_DASH, boundary]), start);
         if (boundaryStartIndex === -1) return null;
         let currentEndOfBoundaryIndex = boundaryStartIndex + boundary.length + 4;
-        while (currentEndOfBoundaryIndex < data.length) {
-            const byte = data[currentEndOfBoundaryIndex];
-            if (byte === Multipart.CR && data[currentEndOfBoundaryIndex + 1] === Multipart.LF)
+        while (currentEndOfBoundaryIndex < body.length) {
+            const byte = body[currentEndOfBoundaryIndex];
+            if (byte === Multipart.CR && body[currentEndOfBoundaryIndex + 1] === Multipart.LF)
                 return [boundaryStartIndex, currentEndOfBoundaryIndex + 2];
             if (byte === Multipart.SP || byte === Multipart.HT) {
                 currentEndOfBoundaryIndex++;
@@ -308,14 +330,17 @@ export class Multipart implements Part {
             }
             // encountered non-linear whitespace after boundary and before any CRLF
             // meaning the boundary could not be terminated, therefore continue search for boundary
-            return Multipart.findBoundaryBounds(data, boundary, boundaryStartIndex + 2);
+            return Multipart.findBoundaryBounds(body, boundary, boundaryStartIndex + 2);
         }
 
         return null;
     }
 
     /**
-     * Parse header params in the format `key=value;foo = "bar"; baz`
+     * Parses header params in the format `key=value;foo = "bar"; baz`.
+     *
+     * @param input The input string.
+     * @internal
      */
     private static parseHeaderParams(input: string): Map<string, string> {
         const params = new Map();
@@ -392,7 +417,10 @@ export class Multipart implements Part {
     }
 
     /**
-     * Extract media type and boundary from a `Content-Type` header
+     * Extracts media type and boundary from a `Content-Type` header.
+     *
+     * @param contentType The `Content-Type` header value.
+     * @internal
      */
     private static parseContentType(contentType: string): { mediaType: string | null, boundary: string | null } {
         const firstSemicolonIndex = contentType.indexOf(";");
@@ -404,7 +432,10 @@ export class Multipart implements Part {
     }
 
     /**
-     * Extract name, filename and whether form-data from a `Content-Disposition` header
+     * Extracts name, filename and whether form-data from a `Content-Disposition` header.
+     *
+     * @param contentDisposition The `Content-Disposition` header value.
+     * @internal
      */
     private static parseContentDisposition(contentDisposition: string): {
         formData: boolean,
@@ -420,8 +451,8 @@ export class Multipart implements Part {
     }
 
     /**
-     * Create FormData from this multipart.
-     * Only parts that have `Content-Disposition` set to `form-data` and a non-empty `name` will be included.
+     * Creates a {@link !FormData} representation of this multipart.
+     * Only parts that have `Content-Disposition` set to `form-data` and a non-empty `name` will be included as parts.
      */
     public formData(): FormData {
         const formData = new FormData();
@@ -439,10 +470,10 @@ export class Multipart implements Part {
     }
 
     /**
-     * Get the bytes of the headers and {@link body} of this multipart.
+     * Gets the byte representation of this multipart message (including headers and body).
      *
      * @throws {@link !RangeError} If the multipart boundary is invalid. A valid boundary is 1 to 70 characters long,
-     * does not end with space, and may only contain: A-Z a-z 0-9 '()+_,-./:=? and space
+     * does not end with space, and may only contain: A-Z a-z 0-9 '()+_,-./:=? and space.
      */
     public bytes(): Uint8Array {
         const result: ArrayLike<number>[] = [];
@@ -453,7 +484,7 @@ export class Multipart implements Part {
     }
 
     /**
-     * Create Blob from this multipart.
+     * Creates a {@link !Blob} instance of this multipart message (including headers and body).
      *
      * @throws {@link !RangeError} If the multipart boundary is invalid. A valid boundary is 1 to 70 characters long,
      * does not end with space, and may only contain: A-Z a-z 0-9 '()+_,-./:=? and space.
@@ -462,6 +493,12 @@ export class Multipart implements Part {
         return new Blob([this.bytes()], {type: this.headers.get("content-type") ?? undefined});
     }
 
+    /**
+     * Determines whether the boundary should be wrapped in quotes when used in the `Content-Type` header.
+     *
+     * @param boundary The boundary bytes.
+     * @internal
+     */
     private static boundaryShouldBeQuoted(boundary: Uint8Array): boolean {
         for (const byte of boundary) {
             if (
@@ -482,7 +519,8 @@ export class Multipart implements Part {
     }
 
     /**
-     * Set the `Content-Type` header of this multipart based on {@link mediaType} and {@link boundary}.
+     * Sets the `Content-Type` header of this multipart based on the {@link mediaType} and {@link boundary}.
+     * @internal
      */
     private setHeaders() {
         const shouldQuoteBoundary = Multipart.boundaryShouldBeQuoted(this.#boundary);

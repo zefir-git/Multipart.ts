@@ -8,8 +8,9 @@ export class Component implements Part {
     public readonly body: Uint8Array;
 
     /**
-     * Create a new Component instance
-     * @param headers The headers of the component
+     * Creates a new Component instance.
+     *
+     * @param headers The headers of the component.
      * @param [body] The body of the component. Defaults to empty if null or undefined.
      */
     public constructor(headers: HeadersInit, body?: ArrayLike<number> | ArrayBuffer | null) {
@@ -18,8 +19,9 @@ export class Component implements Part {
     }
 
     /**
-     * Create a Component instance from a byte representation that includes the headers (if any) and body.
-     * @param data Component byte representation to parse
+     * Creates a Component instance from a byte representation that includes the headers and body.
+     *
+     * @param data The component byte representation to parse.
      */
     public static parse(data: Uint8Array): Component {
         const hasHeaders = !(data[0] === Multipart.CR && data[1] === Multipart.LF);
@@ -43,25 +45,25 @@ export class Component implements Part {
     }
 
     /**
-     * Create a Component from a {@link !File}. If file media type is available,
-     * it will be set in the `Content-Type` header. The file's contents will be used as the part's body.
+     * Creates a Component from a {@link !File}. If the file media type is available, it will be set in the
+     * `Content-Type` header. The file’s contents will be used as the part’s body.
      *
      * This method might be slow if a large file is provided as the file contents need to be read.
      *
-     * @param file File instance to create the component from
-     * @deprecated Use {@link Component.blob}.
+     * @param file The file instance from which to create the component.
+     * @deprecated Use {@link Component.blob} ({@link !File} extends {@link !Blob}).
      */
     public static async file(file: File) {
         return await Component.blob(file);
     }
 
     /**
-     * Create a Component from a {@link !Blob}. If blob media type is available,
-     * it will be set in the `Content-Type` header. The blob's contents will be used as the part's body.
+     * Creates a Component from a {@link !Blob}. If blob media type is available, it will be set in the `Content-Type`
+     * header. The blob's contents will be used as the part's body.
      *
-     * This method might be slow if a large file is provided as the blob contents need to be read.
+     * This method might be slow if a large blob is provided as the blob contents need to be read.
      *
-     * @param blob Blob to create the component from
+     * @param blob The blob from which to create the component.
      */
     public static async blob(blob: Blob) {
         return new Component(blob.type.length > 0 ? {"Content-Type": blob.type} : {}, await blob.arrayBuffer());
@@ -82,7 +84,8 @@ export class Component implements Part {
     }
 
     /**
-     * A Blob representation of this component. Headers will be lost.
+     * A Blob representation of this component. Headers will be lost (except for `Content-Type` which is set as the
+     * blob’s type).
      */
     public blob(): Blob {
         return new Blob([this.body], {type: this.headers.get("Content-Type") ?? undefined});
