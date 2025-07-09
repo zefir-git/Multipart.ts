@@ -16,9 +16,8 @@ dependencies, and no need for polyfills.
 
 - Parse any kind of `multipart/*`, e.g. `multipart/mixed`, `multipart/form-data`, `multipart/byteranges`, etc.
 - Create multipart messages with arbitrary parts
-- Initialise a Multipart instance directly from FormData
-- Serialise a Multipart instance into bytes
-([`Uint8Array`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array))
+- Initialise a [`Multipart`](https://zefir-git.github.io/Multipart.ts/classes/Multipart.html) instance directly from [`FormData`](https://developer.mozilla.org/en-US/docs/Web/API/FormData)
+- Serialise a `Multipart` instance into bytes ([`Uint8Array`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array))
 - Compatible with both Node.js and browsers, without requiring polyfills
 - Zero dependencies — lightweight and efficient
 
