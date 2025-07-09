@@ -1,4 +1,4 @@
-name: Test
+name: Tests
 on:
   pull_request:
     types: [ opened, synchronize, reopened ]
@@ -15,6 +15,7 @@ jobs:
         node:
           - 20
           - 22
+          - 24
     steps:
       - uses: actions/setup-node@v4
         with:
