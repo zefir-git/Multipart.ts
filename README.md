@@ -1,41 +1,56 @@
 # Multipart.ts
 
-A TypeScript library for multipart data parsing and creation.
+[![Documentation](https://img.shields.io/badge/Documentation-blue)](https://zefir-git.github.io/Multipart.ts)
+[![GitHub](https://img.shields.io/badge/GitHub-181717?logo=github)](https://github.com/zefir-git/Multipart.ts)
+[![NPM](https://img.shields.io/npm/v/multipart-ts.svg)](https://www.npmjs.com/package/multipart-ts)
+[![Downloads](https://img.shields.io/npm/d18m/multipart-ts.svg)](https://www.npmjs.com/package/multipart-ts)
+[![Licence](https://img.shields.io/github/license/zefir-git/Multipart.ts.svg)](https://github.com/zefir-git/Multipart.ts/blob/main/LICENSE)
+[![Test](https://github.com/zefir-git/Multipart.ts/actions/workflows/test.yml/badge.svg)](https://github.com/zefir-git/Multipart.ts/actions/workflows/test.yml)
+
+A library for parsing and creating multipart data in Node.js and browsers, with built-in TypeScript support, zero
+dependencies, and no need for polyfills.
 
 [**Documentation**](https://zefir-git.github.io/Multipart.ts)
 
 ## Features
 
 - Parse any kind of `multipart/*`, e.g. `multipart/mixed`, `multipart/form-data`, `multipart/byteranges`, etc.
-- Create your own multipart with any parts
-- Create a Multipart instance from FormData
-- Serialise a Multipart instance into bytes (Uint8Array)
-- Works with Node.js and in the browser without any polyfills
-- Zero dependencies
+- Create multipart messages with arbitrary parts
+- Initialise a Multipart instance directly from FormData
+- Serialise a Multipart instance into bytes ([
+  `Uint8Array`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array))
+- Compatible with both Node.js and browsers, without requiring polyfills
+- Zero dependencies — lightweight and efficient
 
 ## Getting started
 
-Install using NPM
+Install via NPM:
 
 ```shell
 npm i multipart-ts
 ```
 
-Import as native ESM
+Import as native ESM:
 
 ```ts
 import {Multipart} from "multipart-ts";
 ```
 
-This library uses mainly `Uint8Array` so that it works in the browser. In Node.js,
-you can use [`Buffer`](https://nodejs.org/api/buffer.html) as it is a superset of `Uint8Array`.
-In the browser, to convert a `string` to `Uint8Array` and vice-versa,
-use [`TextEncoder`](https://developer.mozilla.org/en-US/docs/Web/API/TextEncoder) and
-[`TextDecoder`](https://developer.mozilla.org/en-US/docs/Web/API/TextDecoder) respectively.
+This library exclusively uses `Uint8Array`, which ensures it works seamlessly in both Node.js and browsers.
+
+In Node.js, [`Buffer`](https://nodejs.org/api/buffer.html) can be used interchangeably with `Uint8Array` in most cases,
+as it inherits from it.
+
+In the browser, use [`TextEncoder`](https://developer.mozilla.org/en-US/docs/Web/API/TextEncoder) and [
+`TextDecoder`](https://developer.mozilla.org/en-US/docs/Web/API/TextDecoder) to convert between strings and
+`Uint8Array`.
 
 ## Example
 
 ### `node:http`
+
+This Node.js example sets up a simple HTTP server that parses multipart messages from POST requests and responds with an
+example multipart message to GET requests.
 
 ```ts
 import http from "node:http";
@@ -44,19 +59,18 @@ import {Component, Multipart} from "multipart-ts";
 http.createServer(async (req, res) => {
     // Parse multipart request body
     if (req.method === "POST" && req.headers["content-type"]) {
-
-        // get the request body
+        // Get the request body
         const body: Uint8Array[] = [];
         for await (const chunk of req)
             body.push(chunk);
 
-        // create a blob to hold the Content-Type header (which includes the boundary) and the body
+        // Create a Blob to hold the Content-Type header (which includes the boundary) and the body
         const blob = new Blob(body, {type: req.headers["content-type"]});
-        // parse multipart from the blob
+        // Parse multipart from the blob
         const multipart = await Multipart.blob(blob);
         console.log(multipart);
 
-        res.end("ok");
+        res.end("Parsed!");
     }
     // Return a multipart response
     else if (req.method === "GET") {
@@ -88,18 +102,23 @@ http.createServer(async (req, res) => {
 
 ### Browser
 
+A minimal example demonstrating the creation, serialisation, and parsing of a simple multipart message. This can also be
+done the same way in Node.js.
+
 ```ts
 import {Multipart, Component} from "multipart-ts";
 
-//create
+// Create
 const multipart = new Multipart(
     [new Component({"Content-Type": "text/plain"}, new TextEncoder().encode("Hello world!"))],
     "your-custom-boundary", // or omit to generate a random one
     "multipart/mixed"
 );
 
-// parse
+// Serialise
 const data: Uint8Array = multipart.bytes();
+
+// Parse
 const parsed: Multipart = Multipart.parse(data);
 
 console.log(new TextDecoder().decode(parsed.parts[0].body)); // Hello world!
@@ -110,5 +129,6 @@ console.log(new TextDecoder().decode(parsed.parts[0].body)); // Hello world!
 
 Copyright © 2024–2025 Zefir Kirilov.
 
-This project is licensed under the GNU Lesser General Public License v3.0 (LGPL-3.0). A copy of the licence text is
-included in this repository. If not, see https://www.gnu.org/licenses/.
+This project is licensed under
+the [GNU Lesser General Public License v3.0 (LGPL-3.0)](https://www.gnu.org/licenses/lgpl-3.0.en.html). A copy of the
+licence text is included in the repository.
