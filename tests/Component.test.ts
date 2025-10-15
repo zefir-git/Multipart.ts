@@ -76,6 +76,13 @@ describe("Component", () => {
 
             expect(new TextDecoder().decode(component.body)).to.equal("Goal: No headers!\r\n\r\nReally none.\r\n");
         });
+
+        it("should discard headers with empty header name", () => {
+            const data = new TextEncoder().encode("Content-Type: application/octet-stream\r\n: no header name\r\nContent-Length: 0\r\n\r\n");
+
+            expect(() => Component.parse(data)).to.not.throw();
+            expect(() => new Headers({"": "no header name"})).to.throw(TypeError);
+        });
     });
 
     describe("file", () => {
