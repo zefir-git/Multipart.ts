@@ -1,5 +1,5 @@
 import {describe, expect, it} from "vitest";
-import {Multipart, Component} from "../dist/index.js";
+import {Multipart, Component} from "../src/index.js";
 
 describe("Multipart", function () {
     describe("constructor", function () {
@@ -41,10 +41,10 @@ describe("Multipart", function () {
 
             expect(parsedMultipart).to.be.an.instanceof(Multipart);
             expect(parsedMultipart.parts.length).to.equal(2);
-            const part1 = parsedMultipart.parts[0];
+            const part1 = parsedMultipart.parts[0]!;
             expect(part1.headers.get("x-foo")).to.equal("bar");
             expect(part1.body).to.deep.equal(component1.body);
-            const part2 = parsedMultipart.parts[1];
+            const part2 = parsedMultipart.parts[1]!;
             expect(part2.headers.get("content-type")).to.equal("text/plain");
             expect(part2.body).to.deep.equal(component2.body);
         });
@@ -81,9 +81,9 @@ describe("Multipart", function () {
 
             expect(parsedMultipart).to.be.an.instanceof(Multipart);
             expect(parsedMultipart.parts.length).to.equal(2);
-            const part1 = parsedMultipart.parts[0];
+            const part1 = parsedMultipart.parts[0]!;
             expect(new TextDecoder().decode(part1.body)).to.equal("This is implicitly typed plain US-ASCII text.\r\nIt does NOT end with a linebreak.");
-            const part2 = parsedMultipart.parts[1];
+            const part2 = parsedMultipart.parts[1]!;
             expect(part2.headers.get("content-type")).to.equal("text/plain; charset=us-ascii");
             expect(new TextDecoder().decode(part2.body)).to.equal("This is explicitly typed plain US-ASCII text.\r\nIt DOES end with a linebreak.\r\n");
         });
@@ -103,16 +103,16 @@ describe("Multipart", function () {
 
             expect(parsedMultipart).to.be.an.instanceof(Multipart);
             expect(parsedMultipart.parts.length).to.equal(2);
-            expect(parsedMultipart.parts[0].headers.get("x-foo")).to.equal("bar");
-            expect(new TextDecoder().decode(parsedMultipart.parts[0].body)).to.equal("foo bar");
+            expect(parsedMultipart.parts[0]!.headers.get("x-foo")).to.equal("bar");
+            expect(new TextDecoder().decode(parsedMultipart.parts[0]!.body)).to.equal("foo bar");
 
-            const parsedInnerMultipart = Multipart.parse(parsedMultipart.parts[1].bytes());
+            const parsedInnerMultipart = Multipart.parse(parsedMultipart.parts[1]!.bytes());
             expect(parsedInnerMultipart).to.be.an.instanceof(Multipart);
             expect(parsedInnerMultipart.parts.length).to.equal(2);
-            expect(parsedInnerMultipart.parts[0].headers.get("content-type")).to.equal("text/plain");
-            expect(new TextDecoder().decode(parsedInnerMultipart.parts[0].body)).to.equal("nested Component 1");
-            expect(parsedInnerMultipart.parts[1].headers.get("content-type")).to.equal("application/json");
-            expect(new TextDecoder().decode(parsedInnerMultipart.parts[1].body)).to.equal(JSON.stringify({foo: "bar"}));
+            expect(parsedInnerMultipart.parts[0]!.headers.get("content-type")).to.equal("text/plain");
+            expect(new TextDecoder().decode(parsedInnerMultipart.parts[0]!.body)).to.equal("nested Component 1");
+            expect(parsedInnerMultipart.parts[1]!.headers.get("content-type")).to.equal("application/json");
+            expect(new TextDecoder().decode(parsedInnerMultipart.parts[1]!.body)).to.equal(JSON.stringify({foo: "bar"}));
         });
 
         it("should handle malformed Multipart data", function () {
@@ -135,7 +135,7 @@ describe("Multipart", function () {
             const parsedMultipart = Multipart.parse(multipartBytes);
             expect(parsedMultipart).to.be.an.instanceof(Multipart);
             expect(parsedMultipart.parts.length).to.equal(1);
-            const part = parsedMultipart.parts[0];
+            const part = parsedMultipart.parts[0]!;
             expect(part.bytes()).to.deep.equal(Multipart.CRLF);
             expect(part.headers).to.be.empty;
             expect(part.body).to.be.empty;
@@ -152,7 +152,7 @@ describe("Multipart", function () {
             const parsedMultipart = Multipart.parse(multipartBytes);
             expect(parsedMultipart).to.be.an.instanceof(Multipart);
             expect(parsedMultipart.parts.length).to.equal(1);
-            const part = parsedMultipart.parts[0];
+            const part = parsedMultipart.parts[0]!;
             expect(part.bytes()).to.deep.equal(Multipart.CRLF);
             expect(part.headers).to.be.empty;
             expect(part.body).to.be.empty;
@@ -178,13 +178,13 @@ describe("Multipart", function () {
 
             expect(parsedMultipart).to.be.an.instanceof(Multipart);
             expect(parsedMultipart.parts.length).to.equal(3);
-            const part1 = parsedMultipart.parts[0];
+            const part1 = parsedMultipart.parts[0]!;
             expect(part1.headers.get("x-foo")).to.equal("Bar");
             expect(new TextDecoder().decode(part1.body)).to.equal("The boundary delimiter of this part has trailing SP.");
-            const part2 = parsedMultipart.parts[1];
+            const part2 = parsedMultipart.parts[1]!;
             expect(part2.headers.get("x-foo")).to.equal("Baz");
             expect(new TextDecoder().decode(part2.body)).to.equal("The boundary delimiter of this part has trailing tab.");
-            const part3 = parsedMultipart.parts[2];
+            const part3 = parsedMultipart.parts[2]!;
             expect(part3.headers.get("x-foo")).to.equal("Foo");
             expect(new TextDecoder().decode(part3.body)).to.equal("The boundary delimiter of this part has trailing SP and tab.");
         });
@@ -208,10 +208,10 @@ describe("Multipart", function () {
 
             expect(parsedMultipart).to.be.an.instanceof(Multipart);
             expect(parsedMultipart.parts.length).to.equal(2);
-            const part1 = parsedMultipart.parts[0];
+            const part1 = parsedMultipart.parts[0]!;
             expect(part1.headers.get("x-foo")).to.equal("Bar");
             expect(new TextDecoder().decode(part1.body)).to.equal("Can this handle\r\n--simple boundary this is fake\r\n\r\nnot new part");
-            const part2 = parsedMultipart.parts[1];
+            const part2 = parsedMultipart.parts[1]!;
             expect(part2.headers.get("x-foo")).to.equal("Baz");
             expect(new TextDecoder().decode(part2.body)).to.equal("Final part");
         });
@@ -223,16 +223,16 @@ describe("Multipart", function () {
                 new Component({"content-type": "text/plain", "x-foo": "bar"}, new TextEncoder().encode("foo bar")),
                 new Component({}, new TextEncoder().encode("test content"))
             ]);
-            const part = new Component({"Content-Type": multipart.headers.get("content-type")}, multipart.bytes());
+            const part = new Component({"Content-Type": multipart.headers.get("content-type")!}, multipart.bytes());
 
             const parsedMultipart = Multipart.part(part);
             expect(parsedMultipart).to.be.an.instanceof(Multipart);
             expect(parsedMultipart.parts.length).to.equal(2);
-            expect(parsedMultipart.parts[0].headers.get("content-type")).to.equal("text/plain");
-            expect(parsedMultipart.parts[0].headers.get("x-foo")).to.equal("bar");
-            expect(new TextDecoder().decode(parsedMultipart.parts[0].body)).to.equal("foo bar");
-            expect(parsedMultipart.parts[1].headers.get("content-type")).to.equal(null);
-            expect(new TextDecoder().decode(parsedMultipart.parts[1].body)).to.equal("test content");
+            expect(parsedMultipart.parts[0]!.headers.get("content-type")).to.equal("text/plain");
+            expect(parsedMultipart.parts[0]!.headers.get("x-foo")).to.equal("bar");
+            expect(new TextDecoder().decode(parsedMultipart.parts[0]!.body)).to.equal("foo bar");
+            expect(parsedMultipart.parts[1]!.headers.get("content-type")).to.equal(null);
+            expect(new TextDecoder().decode(parsedMultipart.parts[1]!.body)).to.equal("test content");
         });
     });
 
@@ -249,10 +249,10 @@ describe("Multipart", function () {
             expect(parsedMultipart).to.be.an.instanceof(Multipart);
             expect(new TextDecoder().decode(parsedMultipart.boundary)).to.equal(boundary);
             expect(parsedMultipart.parts.length).to.equal(2);
-            const part1 = parsedMultipart.parts[0];
+            const part1 = parsedMultipart.parts[0]!;
             expect(part1.headers.get("x-foo")).to.equal("bar");
             expect(part1.body).to.deep.equal(component1.body);
-            const part2 = parsedMultipart.parts[1];
+            const part2 = parsedMultipart.parts[1]!;
             expect(part2.headers.get("content-type")).to.equal("text/plain");
             expect(part2.body).to.deep.equal(component2.body);
         });
@@ -267,15 +267,15 @@ describe("Multipart", function () {
 
             const multipart = await Multipart.formData(formData);
             expect(multipart.headers.get("content-type")).to.not.be.null;
-            expect(multipart.headers.get("content-type").startsWith("multipart/form-data")).to.be.true;
+            expect(multipart.headers.get("content-type")!.startsWith("multipart/form-data")).to.be.true;
             expect(multipart.parts.length).to.equal(3);
-            expect(multipart.parts[0].headers.get("content-disposition")).to.equal('form-data; name="foo"');
-            expect(new TextDecoder().decode(multipart.parts[0].body)).to.equal("bar");
-            expect(multipart.parts[1].headers.get("content-disposition")).to.equal('form-data; name="bar"');
-            expect(new TextDecoder().decode(multipart.parts[1].body)).to.equal("baz");
-            expect(multipart.parts[2].headers.get("content-disposition")).to.equal('form-data; name="file"; filename="hello.js"');
-            expect(multipart.parts[2].headers.get("content-type")).to.equal("application/javascript");
-            expect(new TextDecoder().decode(multipart.parts[2].body)).to.equal("console.log('hello world');");
+            expect(multipart.parts[0]!.headers.get("content-disposition")).to.equal('form-data; name="foo"');
+            expect(new TextDecoder().decode(multipart.parts[0]!.body)).to.equal("bar");
+            expect(multipart.parts[1]!.headers.get("content-disposition")).to.equal('form-data; name="bar"');
+            expect(new TextDecoder().decode(multipart.parts[1]!.body)).to.equal("baz");
+            expect(multipart.parts[2]!.headers.get("content-disposition")).to.equal('form-data; name="file"; filename="hello.js"');
+            expect(multipart.parts[2]!.headers.get("content-type")).to.equal("application/javascript");
+            expect(new TextDecoder().decode(multipart.parts[2]!.body)).to.equal("console.log('hello world');");
         });
 
         it("should handle empty FormData", async function () {
@@ -293,8 +293,8 @@ describe("Multipart", function () {
 
             const multipart = await Multipart.formData(formData);
             expect(multipart.parts.length).to.equal(1);
-            expect(multipart.parts[0].headers.get("content-disposition")).to.equal('form-data; name="largeFile"; filename="largeFile.bin"');
-            const newHash = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-1", multipart.parts[0].body))).map(x => x.toString(16).padStart(2, "0")).join("");
+            expect(multipart.parts[0]!.headers.get("content-disposition")).to.equal('form-data; name="largeFile"; filename="largeFile.bin"');
+            const newHash = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-1", multipart.parts[0]!.body))).map(x => x.toString(16).padStart(2, "0")).join("");
             expect(newHash).to.equal(hash);
         });
     });
@@ -312,11 +312,11 @@ describe("Multipart", function () {
             expect(parsedFormData).to.be.an.instanceof(FormData);
             expect(parsedFormData.get("foo")).to.equal("bar");
             expect(parsedFormData.get("bar")).to.equal("baz");
-            const file = parsedFormData.get("file");
+            const file = parsedFormData.get("file") as File | null;
             expect(file).to.be.an.instanceof(File);
-            expect(file.name).to.equal("hello.js");
-            expect(file.type).to.equal("application/javascript");
-            expect(new TextDecoder().decode(await file.arrayBuffer())).to.equal("console.log('hello world');");
+            expect(file!.name).to.equal("hello.js");
+            expect(file!.type).to.equal("application/javascript");
+            expect(new TextDecoder().decode(await file!.arrayBuffer())).to.equal("console.log('hello world');");
         });
 
         it("should handle empty FormData multipart", async function () {

@@ -1,5 +1,5 @@
 import {describe, expect, it} from "vitest";
-import {Multipart, Component} from "../dist/index.js";
+import {Multipart, Component} from "../src/index.js";
 
 describe("Component", () => {
 
