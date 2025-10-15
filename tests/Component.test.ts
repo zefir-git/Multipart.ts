@@ -78,6 +78,17 @@ describe("Component", () => {
         });
     });
 
+    describe("file", () => {
+        it("should delegate to `blob()` factory", async () => {
+            const file = new File([new Uint8Array([1, 2, 3])], "example", {type: "application/octet-stream"});
+
+            const componentFromFile = await Component.file(file);
+            const componentFromBlob = await Component.blob(file);
+
+            expect(componentFromFile.bytes()).to.deep.equal(componentFromBlob.bytes());
+        });
+    });
+
     describe("blob", () => {
         it("should create Component from Blob with type", async () => {
             const blob = new Blob([new Uint8Array([1, 2, 3])], {type: "text/plain"});
