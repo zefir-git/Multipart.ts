@@ -148,5 +148,13 @@ describe("Component", () => {
             expect(blob.type).to.equal("text/plain");
             expect(await blob.bytes()).to.deep.equal(new Uint8Array(0));
         });
+
+        it("should not set blob type if there is no Content-Type header", async () => {
+            const headersInit = {"Content-Length": "3"};
+            const body = [1, 2, 3];
+            const component = new Component(headersInit, body);
+            const blob = component.blob();
+            expect(blob.type).to.equal("");
+        });
     });
 });
