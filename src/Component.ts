@@ -5,7 +5,7 @@ import {Multipart, Part} from "./index.js";
  */
 export class Component implements Part {
     public readonly headers: Headers;
-    public readonly body: Uint8Array;
+    public readonly body: Uint8Array<ArrayBuffer>;
 
     /**
      * Create a new Component instance
@@ -21,7 +21,7 @@ export class Component implements Part {
      * Create a Component instance from a byte representation that includes the headers (if any) and body.
      * @param data Component byte representation to parse
      */
-    public static parse(data: Uint8Array): Component {
+    public static parse(data: Uint8Array<ArrayBuffer>): Component {
         const hasHeaders = !(data[0] === Multipart.CR && data[1] === Multipart.LF);
         const headersEndIndex = hasHeaders ? Multipart.findSequenceIndex(data, Multipart.combineArrays([Multipart.CRLF, Multipart.CRLF])) + 2 : 0;
 
@@ -67,7 +67,7 @@ export class Component implements Part {
         return new Component(blob.type.length > 0 ? {"Content-Type": blob.type} : {}, await blob.arrayBuffer());
     }
 
-    public bytes(): Uint8Array {
+    public bytes(): Uint8Array<ArrayBuffer> {
         const result: ArrayLike<number>[] = [];
         for (const [key, value] of this.headers.entries())
             result.push(

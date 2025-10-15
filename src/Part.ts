@@ -10,10 +10,10 @@ export interface Part {
     /**
      * The byte data of this part's {@link headers} and {@link body}
      */
-    bytes(): Uint8Array;
+    bytes(): Uint8Array<ArrayBuffer>;
 
     /**
      * The byte data of this part's body
      */
-    body: Uint8Array;
+    body: Uint8Array<ArrayBuffer>;
 }
