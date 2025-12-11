@@ -5,7 +5,7 @@ import {Multipart, Part} from "./index.js";
  */
 export class Component implements Part {
     public readonly headers: Headers;
-    public readonly body: Uint8Array;
+    public readonly body: Uint8Array<ArrayBuffer>;
 
     /**
      * Create a new Component instance
@@ -67,7 +67,7 @@ export class Component implements Part {
         return new Component(blob.type.length > 0 ? {"Content-Type": blob.type} : {}, await blob.arrayBuffer());
     }
 
-    public bytes(): Uint8Array {
+    public bytes(): Uint8Array<ArrayBuffer> {
         const result: ArrayLike<number>[] = [];
         for (const [key, value] of this.headers.entries())
             result.push(
