@@ -1,6 +1,5 @@
-import {expect} from "chai";
-import {Multipart, Component} from "../dist/index.js";
-import {describe} from "mocha";
+import {describe, expect, it} from "vitest";
+import {Multipart, Component} from "../src/index.js";
 
 describe("Component", () => {
 
