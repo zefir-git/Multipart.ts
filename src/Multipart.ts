@@ -149,7 +149,7 @@ export class Multipart implements Part {
      * @throws {@link !RangeError} If the multipart boundary is invalid. A valid boundary is 1 to 70 characters long,
      * does not end with space, and may only contain: A-Z a-z 0-9 '()+_,-./:=? and space
      */
-    public get body(): Uint8Array {
+    public get body(): Uint8Array<ArrayBuffer> {
         if (!Multipart.isValidBoundary(this.#boundary))
             throw new RangeError("Invalid boundary: must be 1 to 70 characters long, not end with space, and may only contain: A-Z a-z 0-9 '()+_,-./:=? and space");
 
@@ -164,7 +164,7 @@ export class Multipart implements Part {
      * @param arrays The array of arrays
      * @internal
      */
-    public static combineArrays(arrays: ArrayLike<number>[]): Uint8Array {
+    public static combineArrays(arrays: ArrayLike<number>[]): Uint8Array<ArrayBuffer> {
         const totalLength = arrays.reduce((total, uint8array) => total + uint8array.length, 0);
         const result = new Uint8Array(totalLength);
         let offset = 0;
@@ -444,7 +444,7 @@ export class Multipart implements Part {
      * @throws {@link !RangeError} If the multipart boundary is invalid. A valid boundary is 1 to 70 characters long,
      * does not end with space, and may only contain: A-Z a-z 0-9 '()+_,-./:=? and space
      */
-    public bytes(): Uint8Array {
+    public bytes(): Uint8Array<ArrayBuffer> {
         const result: ArrayLike<number>[] = [];
         for (const header of this.headers.entries()) result.push(new TextEncoder().encode(header[0]), [Multipart.COLON, Multipart.SP], new TextEncoder().encode(header[1]), Multipart.CRLF);
         result.push(Multipart.CRLF);
