@@ -39,7 +39,6 @@ export class Component implements Part {
             if (colonIndex === -1) continue;
             const key = line.slice(0, colonIndex).trim();
             const value = line.slice(colonIndex + 1).trim();
-            if (key === undefined && value === undefined) continue;
             headers.append(key, value);
         }
 
