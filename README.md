@@ -6,6 +6,7 @@
 [![Downloads](https://img.shields.io/npm/d18m/multipart-ts.svg)](https://www.npmjs.com/package/multipart-ts)
 [![Licence](https://img.shields.io/github/license/zefir-git/Multipart.ts.svg)](https://github.com/zefir-git/Multipart.ts/blob/main/LICENSE)
 [![Test](https://github.com/zefir-git/Multipart.ts/actions/workflows/test.yml/badge.svg)](https://github.com/zefir-git/Multipart.ts/actions/workflows/test.yml)
+![Coverage: 100%](https://img.shields.io/badge/coverage-100%25-brightgreen)
 
 A library for parsing and creating multipart data in Node.js and browsers, with built-in TypeScript support, zero
 dependencies, and no need for polyfills.
