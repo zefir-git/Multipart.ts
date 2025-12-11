@@ -11,10 +11,8 @@
     ],
     "scripts": {
         "build": "tsc",
-        "prepare": "npm run build",
-        "pretest": "npm run build",
         "docs": "typedoc src",
-        "test": "mocha"
+        "test": "vitest run --coverage"
     },
     "keywords": [],
     "author": "Zefir",
@@ -25,10 +23,11 @@
     },
     "description": "TypeScript library for multipart data parsing and creation",
     "devDependencies": {
-        "chai": "^6.0.1",
-        "mocha": "^11.0.1",
+        "@vitest/coverage-v8": "^4.0.15",
+        "@vitest/ui": "^4.0.15",
         "typedoc": "^0.28.0",
         "typedoc-plugin-mdn-links": "^5.0.1",
-        "typescript": "^5.5.4"
+        "typescript": "^5.5.4",
+        "vitest": "^4.0.15"
     }
 }

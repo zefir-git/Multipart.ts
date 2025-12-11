@@ -228,7 +228,7 @@ export class Multipart implements Part {
         if (type === null) throw new SyntaxError("Part is missing Content-Type header");
         const {mediaType, boundary} = Multipart.parseContentType(type);
         if (boundary === null) throw new SyntaxError("Missing boundary in Content-Type header of part");
-        return Multipart.parseBody(part.bytes(), new TextEncoder().encode(boundary), mediaType ?? void 0);
+        return Multipart.parseBody(part.bytes(), new TextEncoder().encode(boundary), mediaType);
     }
 
     /**
@@ -238,10 +238,10 @@ export class Multipart implements Part {
      */
     public static async blob(blob: Blob): Promise<Multipart> {
         const type = blob.type;
-        if (type === "") throw new SyntaxError("Blob is missing Content-Type header");
+        if (type === "") throw new SyntaxError("Blob is missing `type`");
         const {mediaType, boundary} = Multipart.parseContentType(type);
-        if (boundary === null) throw new SyntaxError("Missing boundary in Content-Type header of blob");
-        return Multipart.parseBody(new Uint8Array(await blob.arrayBuffer()), new TextEncoder().encode(boundary), mediaType ?? void 0);
+        if (boundary === null) throw new SyntaxError("Missing boundary in blob `type`");
+        return Multipart.parseBody(new Uint8Array(await blob.arrayBuffer()), new TextEncoder().encode(boundary), mediaType);
     }
 
     /**
@@ -394,7 +394,7 @@ export class Multipart implements Part {
     /**
      * Extract media type and boundary from a `Content-Type` header
      */
-    private static parseContentType(contentType: string): { mediaType: string | null, boundary: string | null } {
+    private static parseContentType(contentType: string): { mediaType: string, boundary: string | null } {
         const firstSemicolonIndex = contentType.indexOf(";");
 
         if (firstSemicolonIndex === -1) return {mediaType: contentType, boundary: null};
