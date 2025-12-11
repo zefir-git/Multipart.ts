@@ -78,6 +78,22 @@ describe("Component", () => {
         });
     });
 
+    describe("file", () => {
+        it("should create Component from File with type", async () => {
+            const file = new File([new Uint8Array([1, 2, 3])], "test.txt", {type: "text/plain"});
+            const component = await Component.file(file);
+            expect(component.headers.get("Content-Type")).to.equal("text/plain");
+            expect(component.body).to.deep.equal(new Uint8Array([1, 2, 3]));
+        });
+
+        it ("should create Component from File without type", async () => {
+            const file = new File([new Uint8Array([1, 2, 3])], "test.txt");
+            const component = await Component.file(file);
+            expect(component.headers.get("Content-Type")).to.equal(null);
+            expect(component.body).to.deep.equal(new Uint8Array([1, 2, 3]));
+        });
+    });
+
     describe("blob", () => {
         it("should create Component from Blob with type", async () => {
             const blob = new Blob([new Uint8Array([1, 2, 3])], {type: "text/plain"});
@@ -129,6 +145,14 @@ describe("Component", () => {
             const blob = component.blob();
             expect(blob.type).to.equal("text/plain");
             expect(await blob.bytes()).to.deep.equal(new Uint8Array(0));
+        });
+
+        it("should return the Blob of a Component with no headers and no body", async () => {
+            const body = new Uint8Array([1, 2, 3]);
+            const component = new Component({}, body);
+            const blob = component.blob();
+            expect(blob.type).to.equal("");
+            expect(await blob.bytes()).to.deep.equal(body);
         });
     });
 });

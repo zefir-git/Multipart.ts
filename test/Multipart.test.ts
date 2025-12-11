@@ -1,4 +1,4 @@
-import {describe, expect, it} from "vitest";
+import {describe, expect, it, vi} from "vitest";
 import {Multipart, Component} from "../src/index.js";
 
 describe("Multipart", function () {
@@ -142,22 +142,40 @@ describe("Multipart", function () {
         });
 
         it("should handle parsing of empty parts in multipart MIME string", function () {
-            const string = "Content-type: multipart/mixed; boundary=\"simple boundary\"\r\n\r\n"
-                + "--simple boundary\r\n"
+            const string = "Content-type: multipart/mixed;; boundary=foo\"bar;\r\n\r\n"
+                + "--foo\"bar\r\n"
                 + "\r\n"
                 + "\r\n"
-                + "--simple boundary--\r\n";
+                + "--foo\"bar--\r\n";
             const multipart = Multipart.parse(new TextEncoder().encode(string));
-            const multipartBytes = multipart.bytes();
-            const parsedMultipart = Multipart.parse(multipartBytes);
-            expect(parsedMultipart).to.be.an.instanceof(Multipart);
-            expect(parsedMultipart.parts.length).to.equal(1);
-            const part = parsedMultipart.parts[0];
+            expect(multipart).to.be.an.instanceof(Multipart);
+            expect(multipart.parts.length).to.equal(1);
+            const part = multipart.parts[0];
             expect(part!.bytes()).to.deep.equal(Multipart.CRLF);
             expect(part!.headers).to.be.empty;
             expect(part!.body).to.be.empty;
         });
 
+        it("should parse Content-Type with escaped characters in boundary", function () {
+            const string =
+                'Content-Type: multipart/mixed; foo"bar\\" = baz; boundary = "test\\"boundary";a\r\n' +
+                '\r\n' +
+                '--test"boundary\r\n' +
+                'X-Foo: Bar\r\n' +
+                '\r\n' +
+                'Content with escaped boundary\r\n' +
+                '--test"boundary--\r\n';
+
+            const parsedMultipart = Multipart.parse(new TextEncoder().encode(string));
+
+            expect(parsedMultipart).to.be.an.instanceof(Multipart);
+            expect(new TextDecoder().decode(parsedMultipart.boundary)).to.equal('test"boundary');
+            expect(parsedMultipart.parts.length).to.equal(1);
+            expect(parsedMultipart.parts[0]!.headers.get("x-foo")).to.equal("Bar");
+        });
+    });
+
+    describe("parseBody", function () {
         it("should ignore linear whitespace after boundary delimiter", function () {
             const string =
                 '--simple boundary    \r\n' +
@@ -202,7 +220,9 @@ describe("Multipart", function () {
                 'X-Foo: Baz\r\n' +
                 '\r\n' +
                 'Final part\r\n' +
-                '--simple boundary--\r\n'
+                '--simple boundary--\r\n' +
+                'Some epilogue text\r\n' +
+                '--simple boundary \t';
 
             const parsedMultipart = Multipart.parseBody(new TextEncoder().encode(string), new TextEncoder().encode("simple boundary"));
 
@@ -214,6 +234,57 @@ describe("Multipart", function () {
             const part2 = parsedMultipart.parts[1];
             expect(part2!.headers.get("x-foo")).to.equal("Baz");
             expect(new TextDecoder().decode(part2!.body)).to.equal("Final part");
+        });
+
+        it("should stop parsing when no next boundary exists", function () {
+            const boundary = new TextEncoder().encode("simple boundary");
+
+            const string =
+                "--simple boundary\r\n" +
+                "This part has no following boundary.\r\n";
+
+            const parsedMultipart = Multipart.parseBody(
+                new TextEncoder().encode(string),
+                boundary
+            );
+
+            expect(parsedMultipart).to.be.an.instanceof(Multipart);
+            expect(parsedMultipart.parts.length).to.equal(0);
+        });
+
+        it("should parse correctly with empty boundary", function () {
+            const boundary = new Uint8Array(0);
+
+            const string =
+                "--\r\n" +
+                "X-Foo: Bar\r\n" +
+                "\r\n" +
+                "First part body\r\n" +
+                "--\r\n" +
+                "X-Foo: Baz\r\n" +
+                "\r\n" +
+                "Second part body\r\n" +
+                "----\r\n";
+
+            const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+            const parsedMultipart = Multipart.parseBody(
+                new TextEncoder().encode(string),
+                boundary
+            );
+
+            expect(warnSpy).toHaveBeenCalled();
+            warnSpy.mockRestore();
+
+            expect(parsedMultipart).to.be.an.instanceof(Multipart);
+            expect(parsedMultipart.parts.length).to.equal(2);
+
+            const part1 = parsedMultipart.parts[0];
+            expect(part1!.headers.get("x-foo")).to.equal("Bar");
+            expect(new TextDecoder().decode(part1!.body)).to.equal("First part body");
+
+            const part2 = parsedMultipart.parts[1];
+            expect(part2!.headers.get("x-foo")).to.equal("Baz");
+            expect(new TextDecoder().decode(part2!.body)).to.equal("Second part body");
         });
     });
 
@@ -234,6 +305,11 @@ describe("Multipart", function () {
             expect(new TextDecoder().decode(parsedMultipart.parts[0]!.body)).to.equal("foo bar");
             expect(parsedMultipart.parts[1]!.headers.get("content-type")).to.equal(null);
             expect(new TextDecoder().decode(parsedMultipart.parts[1]!.body)).to.equal("test content");
+        });
+
+        it("should throw when Content-Type does not define boundary", function () {
+            const part = new Component({"Content-Type": "multipart/mixed;"}, new TextEncoder().encode("test content"));
+            expect(() => Multipart.part(part)).to.throw(SyntaxError);
         });
     });
 
@@ -257,6 +333,16 @@ describe("Multipart", function () {
             expect(part2!.headers.get("content-type")).to.equal("text/plain");
             expect(part2!.body).to.deep.equal(component2.body);
         });
+
+        it("should throw if Blob has no `type`", async function () {
+            const blob = new Blob(["test content"]);
+            await expect(Multipart.blob(blob)).rejects.to.throw(SyntaxError);
+        });
+
+        it("should throw if Blob `type` does not specify boundary", async function () {
+            const blob = new Blob(["test content"], {type: "multipart/mixed"});
+            await expect(Multipart.blob(blob)).rejects.to.throw(SyntaxError);
+        })
     });
 
     describe("formData", function () {
@@ -300,6 +386,20 @@ describe("Multipart", function () {
         });
     });
 
+    describe("findSequenceIndex", function () {
+        it("should return -1 when `start` is out of bounds", function () {
+            const result = Multipart.findSequenceIndex(new Uint8Array(0), new Uint8Array(0), 1);
+            expect(result).to.equal(-1);
+        });
+    });
+
+    describe("private findBoundaryBounds", function () {
+        it("should return null when `start` is out of bounds", function () {
+            const result = Multipart["findBoundaryBounds"](new Uint8Array(0), new Uint8Array(0), 1);
+            expect(result).to.equal(null);
+        });
+    });
+
     describe("#formData", function () {
         it("should correctly return the FormData of the Multipart", async function () {
             const formData = new FormData();
@@ -325,6 +425,49 @@ describe("Multipart", function () {
             const formData = multipart.formData();
             expect(formData).to.be.an.instanceof(FormData);
             expect(Object.keys(Object.fromEntries(formData.entries())).length).to.equal(0);
+        });
+
+        it("should handle a mix of form-data and non-form-data parts", async function () {
+            const multipart = new Multipart([
+                new Component({"content-disposition": "form-data; name=foo"}, new TextEncoder().encode("foo")),
+                new Component({
+                    "content-disposition": "attachment; filename=bar.txt",
+                    "content-type": "text/plain"
+                }, new TextEncoder().encode("bar")),
+                new Component({}, []),
+                new Component({"content-disposition": "form-data; name=baz; filename=baz.txt"}, [0])
+            ]);
+            const formData = multipart.formData();
+            expect(formData).to.be.an.instanceof(FormData);
+            expect(Array.from(formData.entries()).length).to.equal(2);
+            expect(formData.get("foo")).to.equal("foo");
+            expect(formData.get("baz")).to.be.an.instanceof(File);
+            expect((formData.get("baz") as File).name).to.equal("baz.txt");
+            expect(await (formData.get("baz") as File).arrayBuffer()).to.deep.equal(new ArrayBuffer(1));
+        });
+    });
+
+    describe("#boundary", function () {
+        it("should be correctly reflected in Content-Type upon change", function () {
+            const multipart = new Multipart([], void 0, "multipart/mixed");
+            expect(multipart.headers.has("content-type")).to.be.true;
+
+            multipart.boundary = "new-boundary";
+            expect(multipart.headers.get("content-type")).to.equal("multipart/mixed; boundary=new-boundary");
+
+            // space must cause value to be quoted
+            multipart.boundary = new TextEncoder().encode("special boundary");
+            expect(multipart.headers.get("content-type")).to.equal("multipart/mixed; boundary=\"special boundary\"");
+        });
+    });
+
+    describe("#mediaType", function () {
+        it("should be correctly reflected in Content-Type upon change", function () {
+            const multipart = new Multipart([], "boundary", "multipart/mixed");
+            expect(multipart.headers.has("content-type")).to.be.true;
+            expect(multipart.headers.get("content-type")).to.equal("multipart/mixed; boundary=boundary");
+            multipart.mediaType = "multipart/alternative";
+            expect(multipart.headers.get("content-type")).to.equal("multipart/alternative; boundary=boundary");
         });
     });
 
@@ -418,6 +561,18 @@ describe("Multipart", function () {
             expect(blob.type).to.equal(multipart.headers.get("content-type"));
             expect(await blob.bytes()).to.deep.equal(multipart.bytes());
         });
+
+        it("should tolerate loss of Content-Type header", async function () {
+            const boundary = "test-boundary";
+            const component = new Component({"x-foo": "bar"}, new TextEncoder().encode("test content"));
+            const multipart = new Multipart([component], boundary);
+            multipart.headers.delete("content-type");
+
+            const blob = multipart.blob();
+
+            expect(blob.type).to.equal("");
+            expect(await blob.bytes()).to.deep.equal(multipart.bytes());
+        })
     });
 
     describe("#headers", function () {
