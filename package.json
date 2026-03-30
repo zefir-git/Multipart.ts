@@ -27,7 +27,7 @@
         "@vitest/ui": "^4.0.15",
         "typedoc": "^0.28.0",
         "typedoc-plugin-mdn-links": "^5.0.1",
-        "typescript": "^5.5.4",
+        "typescript": "^6.0.2",
         "vitest": "^4.0.15"
     }
 }
