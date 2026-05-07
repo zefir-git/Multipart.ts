@@ -94,7 +94,7 @@ export class Multipart implements Part {
      * @throws {@link !RangeError} If the multipart boundary is invalid. A valid boundary is 1 to 70 characters long,
      * does not end with space, and may only contain: A-Z a-z 0-9 '()+_,-./:=? and space.
      */
-    public get body(): Uint8Array {
+    public get body(): Uint8Array<ArrayBuffer> {
         if (!Multipart.isValidBoundary(this.#boundary))
             throw new RangeError("Invalid boundary: must be 1 to 70 characters long, not end with space, and may only contain: A-Z a-z 0-9 '()+_,-./:=? and space");
 
@@ -131,7 +131,7 @@ export class Multipart implements Part {
      * @param arrays The arrays to concatenate.
      * @internal
      */
-    public static combineArrays(arrays: ArrayLike<number>[]): Uint8Array {
+    public static combineArrays(arrays: ArrayLike<number>[]): Uint8Array<ArrayBuffer> {
         const totalLength = arrays.reduce((total, uint8array) => total + uint8array.length, 0);
         const result = new Uint8Array(totalLength);
         let offset = 0;
@@ -200,7 +200,7 @@ export class Multipart implements Part {
         if (type === null) throw new SyntaxError("Part is missing Content-Type header");
         const {mediaType, boundary} = Multipart.parseContentType(type);
         if (boundary === null) throw new SyntaxError("Missing boundary in Content-Type header of part");
-        return Multipart.parseBody(part.bytes(), new TextEncoder().encode(boundary), mediaType ?? void 0);
+        return Multipart.parseBody(part.bytes(), new TextEncoder().encode(boundary), mediaType);
     }
 
     /**
@@ -212,10 +212,10 @@ export class Multipart implements Part {
      */
     public static async blob(blob: Blob): Promise<Multipart> {
         const type = blob.type;
-        if (type === "") throw new SyntaxError("Blob is missing Content-Type header");
+        if (type === "") throw new SyntaxError("Blob is missing `type`");
         const {mediaType, boundary} = Multipart.parseContentType(type);
-        if (boundary === null) throw new SyntaxError("Missing boundary in Content-Type header of blob");
-        return Multipart.parseBody(new Uint8Array(await blob.arrayBuffer()), new TextEncoder().encode(boundary), mediaType ?? void 0);
+        if (boundary === null) throw new SyntaxError("Missing boundary in blob `type`");
+        return Multipart.parseBody(new Uint8Array(await blob.arrayBuffer()), new TextEncoder().encode(boundary), mediaType);
     }
 
     /**
@@ -422,7 +422,7 @@ export class Multipart implements Part {
      * @param contentType The `Content-Type` header value.
      * @internal
      */
-    private static parseContentType(contentType: string): { mediaType: string | null, boundary: string | null } {
+    private static parseContentType(contentType: string): { mediaType: string, boundary: string | null } {
         const firstSemicolonIndex = contentType.indexOf(";");
 
         if (firstSemicolonIndex === -1) return {mediaType: contentType, boundary: null};
@@ -475,7 +475,7 @@ export class Multipart implements Part {
      * @throws {@link !RangeError} If the multipart boundary is invalid. A valid boundary is 1 to 70 characters long,
      * does not end with space, and may only contain: A-Z a-z 0-9 '()+_,-./:=? and space.
      */
-    public bytes(): Uint8Array {
+    public bytes(): Uint8Array<ArrayBuffer> {
         const result: ArrayLike<number>[] = [];
         for (const header of this.headers.entries()) result.push(new TextEncoder().encode(header[0]), [Multipart.COLON, Multipart.SP], new TextEncoder().encode(header[1]), Multipart.CRLF);
         result.push(Multipart.CRLF);

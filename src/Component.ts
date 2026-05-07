@@ -5,7 +5,7 @@ import {Multipart, Part} from "./index.js";
  */
 export class Component implements Part {
     public readonly headers: Headers;
-    public readonly body: Uint8Array;
+    public readonly body: Uint8Array<ArrayBuffer>;
 
     /**
      * Creates a new Component instance.
@@ -13,9 +13,13 @@ export class Component implements Part {
      * @param headers The headers of the component.
      * @param [body] The body of the component. Defaults to empty if null or undefined.
      */
-    public constructor(headers: HeadersInit, body?: ArrayLike<number> | ArrayBuffer | null) {
+    public constructor(headers: HeadersInit, body?: ArrayLike<number> | ArrayBuffer | ArrayBufferView<ArrayBuffer> | null) {
         this.headers = new Headers(headers);
-        this.body = body === undefined || body === null ? new Uint8Array(0) : new Uint8Array(body);
+        this.body = body === undefined || body === null
+            ? new Uint8Array(new ArrayBuffer(0))
+            : ArrayBuffer.isView(body)
+                ? new Uint8Array(body.buffer, body.byteOffset, body.byteLength)
+                : new Uint8Array(body);
     }
 
     /**
@@ -37,7 +41,6 @@ export class Component implements Part {
             if (colonIndex === -1) continue;
             const key = line.slice(0, colonIndex).trim();
             const value = line.slice(colonIndex + 1).trim();
-            if (key === undefined && value === undefined) continue;
             headers.append(key, value);
         }
 
@@ -69,7 +72,7 @@ export class Component implements Part {
         return new Component(blob.type.length > 0 ? {"Content-Type": blob.type} : {}, await blob.arrayBuffer());
     }
 
-    public bytes(): Uint8Array {
+    public bytes(): Uint8Array<ArrayBuffer> {
         const result: ArrayLike<number>[] = [];
         for (const [key, value] of this.headers.entries())
             result.push(
