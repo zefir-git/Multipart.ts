@@ -23,7 +23,7 @@
     },
     "description": "TypeScript library for multipart data parsing and creation",
     "devDependencies": {
-        "@vitest/coverage-v8": "^4.0.15",
+        "@vitest/coverage-v8": "^5.0.0",
         "@vitest/ui": "^4.0.15",
         "typedoc": "^0.28.0",
         "typedoc-plugin-mdn-links": "^5.0.1",
