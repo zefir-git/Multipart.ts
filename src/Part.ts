@@ -3,17 +3,17 @@
  */
 export interface Part {
     /**
-     * The headers of this part
+     * The headers of this part.
      */
     headers: Headers;
 
     /**
-     * The byte data of this part's {@link headers} and {@link body}
+     * The byte data of this part’s body.
      */
     bytes(): Uint8Array<ArrayBuffer>;
 
     /**
-     * The byte data of this part's body
+     * The byte data of this part’s {@link headers} and {@link body}.
      */
     body: Uint8Array<ArrayBuffer>;
 }
